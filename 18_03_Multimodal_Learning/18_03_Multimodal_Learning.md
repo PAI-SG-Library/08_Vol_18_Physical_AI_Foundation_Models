@@ -1,0 +1,2880 @@
+**Volume 18 Physical AI Foundation Models**
+
+
+# 3. Multimodal Learning
+
+##  
+
+## 3.1 Multimodal Learning Theory Alignment Fusion Generation
+
+![](images/image1.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+Multimodal learning is the study of how an artificial intelligence system can learn from, connect, and generate information across different forms of data. In Physical AI, these modalities may include RGB images, depth maps, LiDAR scans, language instructions, audio, joint states, force signals, tactile measurements, maps, robot actions, and mission records. Each modality describes only part of the physical situation. A camera provides appearance, depth sensors provide geometry, proprioception describes the robot's body, force sensing reveals contact, and language expresses goals or constraints. Multimodal learning attempts to combine these partial views into a coherent representation that supports perception, reasoning, planning, and action.
+
+The theoretical challenge begins with the fact that modalities are not naturally comparable. An image is a dense spatial array, language is a symbolic sequence, a point cloud is an unordered geometric set, and a force signal is a continuous time series. Their scales, sampling rates, noise characteristics, and semantic meanings differ. A multimodal model must therefore learn both modality-specific structure and cross-modal relationships. If the model forces every input into one uniform representation too early, it may lose important structure. If it processes every modality independently for too long, it may fail to discover meaningful interactions.
+
+A useful way to understand multimodal learning is through three central processes: alignment, fusion, and generation. Alignment determines which elements across modalities correspond to each other. Fusion combines complementary evidence into a shared or coordinated representation. Generation produces one modality, prediction, or action from information contained in other modalities. These processes are closely connected, but each solves a different problem.
+
+Multimodal alignment identifies relationships between observations that refer to the same object, event, concept, time, or physical state. In a robot system, the word "valve" must align with a visible component, its three-dimensional position, and possibly an inspection target stored in a digital twin. A force increase must align with the moment when the gripper contacts an object. A navigation instruction must align with a location in a semantic map.
+
+Alignment may be global or local. Global alignment connects complete samples, such as an image and its caption or a robot trajectory and its task description. Local alignment connects smaller elements, such as individual words with image regions, action steps with sensor changes, or object tokens with three-dimensional points. Local alignment is more difficult but more useful for physical interaction because actions depend on specific objects and spatial relationships rather than only general scene meaning.
+
+Contrastive learning is one of the most widely used alignment methods. Representations of related modality pairs are pulled closer together in a shared latent space, while unrelated pairs are pushed apart. An image of a robotic gripper holding a component should be close to the corresponding language description and distant from an unrelated instruction. This encourages the model to learn semantic correspondence without requiring a detailed label for every feature.
+
+However, contrastive alignment can learn shortcuts. If all factory images contain similar backgrounds, the model may associate the background with certain instructions instead of understanding the task. Strong multimodal learning therefore requires diverse data, difficult negative examples, geometric variation, and tests that separate true grounding from superficial correlation.
+
+Temporal alignment is especially important in robotics. Sensors operate at different frequencies and may contain delays. Camera frames, joint states, force readings, and motor commands must be synchronized accurately. If a force spike is paired with the wrong image or action, the model may learn an incorrect physical relationship. Timestamps, interpolation, hardware synchronization, and relative-time encoding are therefore part of multimodal learning, not merely data-engineering details.
+
+Spatial alignment is equally critical. Camera features, depth points, LiDAR measurements, robot links, and map locations may use different coordinate frames. Cross-modal learning becomes unreliable if these frames are inconsistent. Known calibration can be used to project observations into a common geometric frame, while learned models refine uncertain associations. Combining explicit geometry with learned alignment is generally more reliable than expecting a neural network to infer all spatial transformations from data.
+
+Alignment does not always mean forcing modalities into identical representations. Some information is shared, while other information is modality-specific. Language may describe purpose and intent that cannot be observed directly from an image. Tactile sensing may reveal surface friction that is visually invisible. A strong representation should separate shared semantic factors from private modality-specific factors.
+
+Fusion is the process of combining aligned information. Early fusion combines modalities near the input stage. Features are projected into a common space and processed together. This allows direct interaction among modalities but may be inefficient when one modality, such as video, produces far more tokens than others.
+
+Late fusion processes each modality independently and combines the outputs near the decision stage. This preserves modality-specific structure and simplifies implementation, but it may miss detailed interactions. A model may know what an object looks like and what the robot state is, yet fail to understand how the current joint configuration affects access to that object.
+
+Intermediate fusion is often the most practical approach. Each modality first passes through a specialized encoder, after which cross-attention, shared latent tokens, gating, or multimodal transformer layers exchange information. This provides a balance between specialization and interaction.
+
+Cross-attention is a central fusion mechanism. Queries from one modality retrieve relevant keys and values from another. A language instruction can query image regions, an action query can retrieve robot-state and geometric information, and a contact-state query can retrieve force and tactile evidence. Cross-attention allows information exchange to depend on the current task rather than combining all features uniformly.
+
+Gated fusion provides another approach. The model learns how strongly each modality should contribute. During free-space motion, vision and geometry may dominate. During contact, force and tactile signals may become more important. If a camera becomes blurred or a sensor fails, the gate can reduce its contribution.
+
+Reliable gating requires uncertainty information. A modality should not receive high weight simply because its features are strong. Sensor confidence, calibration quality, observation age, and fault status should influence fusion. Multimodal agreement does not automatically guarantee correctness because several modalities may share the same underlying error.
+
+Fusion can be symmetric or asymmetric. Symmetric fusion treats modalities as equal information sources. Asymmetric fusion uses one modality to condition another. In robotics, language often provides the goal while vision provides evidence. Robot state may define physical constraints while the map provides global structure. These roles are different, so asymmetric fusion is often appropriate.
+
+A shared latent space can support transfer across tasks and modalities. Images, language, states, and actions are projected into representations that express common concepts such as object identity, reachability, motion, contact, and task progress. The model can then reuse knowledge learned from one modality to interpret another.
+
+Nevertheless, complete unification can be harmful. Low-level motor currents and high-level language should not necessarily occupy the same representational scale. Hierarchical multimodal models therefore maintain several latent spaces. A semantic space represents objects and goals, a geometric space represents position and shape, a temporal space represents dynamics, and an action space represents executable behavior.
+
+Multimodal generation uses one or more modalities to produce another modality or a physical output. Image captioning generates language from vision. Text-to-image models generate visual content from language. In Physical AI, generation may include action generation from vision and instructions, future-state generation from current observations and candidate actions, or missing-sensor reconstruction from other modalities.
+
+Vision-language-action models are a major example. The model receives visual observations and language instructions and generates robot actions. The generated output may be discrete action tokens, continuous control values, trajectories, skill calls, or action chunks. This extends multimodal generation beyond digital content into physical behavior.
+
+Action generation requires stronger constraints than text generation. A plausible sentence only needs semantic coherence, but a robot action must satisfy kinematics, dynamics, timing, collision limits, tool geometry, and safety rules. Multimodal generative models must therefore operate inside a larger control architecture that validates their outputs.
+
+World models represent another form of generation. They predict how the environment may change after an action. A model may generate future images, object poses, contact states, robot trajectories, or latent scene representations. This supports planning because candidate actions can be compared before execution.
+
+The quality of a generated future should not be judged only by visual realism. A scene may look convincing while containing incorrect geometry or physics. For robotics, control-relevant accuracy is more important. Object position, free space, contact, velocity, support relationships, and collision risk must be represented correctly.
+
+Conditional generation also allows missing modality reconstruction. If a depth sensor temporarily fails, the model may estimate depth from RGB images and motion history. If a camera is occluded, object state may be estimated from previous observations and proprioception. Such reconstruction can improve robustness, but predicted values should not be treated as equivalent to validated measurements in safety-critical functions.
+
+Generative models are often probabilistic because the physical future may be uncertain. Several grasp trajectories may all be valid, and an object may move in different ways. Diffusion models, flow-based models, autoregressive models, and latent-variable models can represent multiple possible outcomes.
+
+The model should express uncertainty rather than collapse every situation into one confident prediction. Multiple generated candidates can be evaluated by planners, world models, and safety constraints. High uncertainty may trigger additional sensing, slower execution, or human assistance.
+
+The relationship among alignment, fusion, and generation is cyclical. Good alignment supports meaningful fusion. Good fusion creates representations that improve generation. Generated predictions can then be compared with actual observations to improve future alignment and representation learning.
+
+For example, a robot aligns a language instruction with an object, fuses visual geometry with joint state, and generates a grasp trajectory. After execution, force and tactile feedback reveal whether the grasp succeeded. The difference between predicted and observed outcomes becomes a learning signal for improving all three stages.
+
+Self-supervised learning is important because multimodal robot data is expensive to label. Models can learn by predicting one modality from another, reconstructing masked segments, matching synchronized streams, detecting temporal misalignment, or forecasting future observations.
+
+Cross-modal prediction encourages physical understanding. Predicting visual change from action and robot state teaches action consequence. Predicting force from vision and motion teaches contact relationships. Predicting language descriptions from trajectories teaches task semantics.
+
+However, the model may exploit easy statistical shortcuts. Careful objective design is needed to ensure that the learned representation captures causal and physical relationships rather than dataset regularities.
+
+Multimodal learning must also handle missing and corrupted modalities. Real robots experience sensor failure, packet loss, glare, occlusion, calibration drift, and communication delay. Training should include modality dropout and degraded inputs so that the model does not rely completely on one sensor.
+
+When information is missing, the system should represent absence explicitly and reduce confidence. A zero vector should not be mistaken for a valid measurement. The model may continue using other modalities, request another observation, or enter a safe state.
+
+Evaluation should measure each of the three central processes. Alignment can be tested through object grounding, temporal correspondence, and coordinate consistency. Fusion can be evaluated by modality ablation, sensor corruption, and task-conditioned relevance. Generation can be evaluated through action success, future prediction, geometric accuracy, and uncertainty calibration.
+
+Final task success alone is insufficient. A robot may succeed by using one dominant modality while ignoring others. Ablation studies reveal whether each modality contributes meaningfully. Counterfactual tests can determine whether changing language, geometry, or force input changes the output appropriately.
+
+Closed-loop evaluation is essential because generated actions alter future observations. A model that performs well on recorded data may fail when its own errors influence the next state. Simulation and real-robot testing should therefore examine recovery, robustness, latency, and safety intervention.
+
+Multimodal models should remain part of a layered architecture. Learned alignment and fusion provide flexible interpretation, while deterministic geometry, control, and safety systems enforce physical constraints. Language grounding should identify the target, but collision checking must verify the trajectory. Generated actions may propose movement, but low-level controllers must maintain stability.
+
+The long-term goal of multimodal learning for Physical AI is not merely to place several sensor types inside one network. It is to construct a coherent model of the robot, environment, task, and physical consequences.
+
+Such a model should know which observations describe the same entity, how different sensors complement one another, which information is reliable, how actions transform the world, and when additional evidence is required.
+
+Alignment provides correspondence, fusion provides integrated understanding, and generation converts understanding into prediction and action. Together, they form the theoretical foundation through which multimodal data becomes embodied intelligence.
+
+A successful Physical AI foundation model will preserve modality-specific structure while learning shared concepts. It will integrate information according to relevance and confidence, generate physically feasible outputs, and update its beliefs through closed-loop interaction.
+
+In this way, multimodal learning becomes the bridge between heterogeneous robot sensors and coherent autonomous behavior. It allows separate streams of vision, language, geometry, force, state, time, and action to become a unified but structured representation of the physical world.
+
+멀티모달 학습(Multimodal Learning)은 인공지능 시스템이 서로 다른 형태의 데이터로부터 학습하고, 이들을 연결하며, 여러 모달리티(Modality)에 걸쳐 정보를 생성하는 방법을 연구하는 분야이다. 피지컬 AI에서는 RGB 이미지, 깊이 지도(Depth Map), LiDAR 스캔, 언어 명령(Language Instruction), 음성(Audio), 관절 상태(Joint State), 힘 신호(Force Signal), 촉각 측정값(Tactile Measurement), 지도(Map), 로봇 행동(Robot Action), 임무 기록(Mission Record) 등이 모달리티에 포함될 수 있다. 각 모달리티는 물리적 상황의 일부만 설명한다. 카메라는 외형을 제공하고, 깊이 센서는 기하학(Geometry)을 제공하며, 고유감각(Proprioception)은 로봇 몸체의 상태를 설명하고, 힘 센싱은 접촉을 보여주며, 언어는 목표와 제약조건을 표현한다. 멀티모달 학습은 이러한 부분적인 관점을 하나의 일관된 표현(Coherent Representation)으로 결합하여 인식(Perception), 추론(Reasoning), 계획(Planning), 행동(Action)을 지원하고자 한다.
+
+이론적 과제는 서로 다른 모달리티가 본질적으로 직접 비교하기 어렵다는 사실에서 시작된다. 이미지는 밀집된 공간 배열(Dense Spatial Array)이고, 언어는 상징적 시퀀스(Symbolic Sequence)이며, 포인트 클라우드(Point Cloud)는 순서가 없는 기하 집합(Unordered Geometric Set)이고, 힘 신호는 연속적인 시계열(Continuous Time Series)이다. 이들의 크기, 샘플링 주기(Sampling Rate), 노이즈 특성, 의미적 역할도 서로 다르다. 따라서 멀티모달 모델은 모달리티별 고유 구조와 교차 모달 관계(Cross-Modal Relationship)를 모두 학습해야 한다. 모든 입력을 지나치게 이른 단계에서 하나의 표현으로 강제하면 중요한 구조를 잃을 수 있다. 반대로 각 모달리티를 너무 오랫동안 독립적으로 처리하면 의미 있는 상호작용을 발견하지 못할 수 있다.
+
+멀티모달 학습은 정렬(Alignment), 융합(Fusion), 생성(Generation)이라는 세 가지 핵심 과정으로 이해할 수 있다. 정렬은 서로 다른 모달리티의 어떤 요소들이 서로 대응하는지를 결정한다. 융합은 상호 보완적인 증거를 공유되거나 조정된 표현으로 결합한다. 생성은 다른 모달리티에 포함된 정보를 이용하여 특정 모달리티, 예측 결과, 또는 행동을 생성한다. 이 세 과정은 서로 긴밀하게 연결되어 있지만 각각 다른 문제를 해결한다.
+
+멀티모달 정렬(Multimodal Alignment)은 동일한 객체, 사건, 개념, 시간, 물리적 상태를 가리키는 서로 다른 관측 사이의 관계를 식별한다. 로봇 시스템에서 "밸브(valve)"라는 단어는 실제로 보이는 부품, 해당 부품의 3차원 위치, 디지털 트윈(Digital Twin)에 저장된 검사 대상과 연결되어야 한다. 힘의 증가는 그리퍼(Gripper)가 객체에 접촉하는 순간과 정렬되어야 한다. 내비게이션 명령은 의미 지도(Semantic Map)의 특정 위치와 대응해야 한다.
+
+정렬은 전역적(Global)이거나 지역적(Local)일 수 있다. 전역 정렬(Global Alignment)은 전체 이미지와 캡션(Caption), 전체 로봇 궤적과 작업 설명처럼 완전한 샘플을 연결한다. 지역 정렬(Local Alignment)은 개별 단어와 이미지 영역, 행동 단계와 센서 변화, 객체 토큰과 3차원 점처럼 더 작은 요소를 연결한다. 지역 정렬은 더 어렵지만, 물리적 상호작용에는 훨씬 더 중요하다. 로봇 행동은 장면 전체의 의미만이 아니라 특정 객체와 공간 관계에 의존하기 때문이다.
+
+대조학습(Contrastive Learning)은 가장 널리 사용되는 정렬 방법 중 하나이다. 서로 관련된 모달리티 쌍의 표현은 공유 잠재 공간(Shared Latent Space)에서 가깝게 배치되고, 관련 없는 쌍은 멀어지도록 학습된다. 로봇 그리퍼가 부품을 잡고 있는 이미지는 해당 언어 설명과 가까워야 하고, 관계없는 명령과는 멀어야 한다. 이를 통해 모든 특징에 상세한 라벨을 붙이지 않고도 의미적 대응 관계를 학습할 수 있다.
+
+그러나 대조 정렬은 지름길(Shortcut)을 학습할 수 있다. 모든 공장 이미지에 유사한 배경이 존재한다면 모델은 실제 작업을 이해하는 대신 특정 배경과 특정 명령을 연결할 수 있다. 따라서 강력한 멀티모달 학습을 위해서는 다양한 데이터, 어려운 부정 예제(Hard Negative), 기하학적 변화, 피상적인 상관관계와 실제 접지를 구분하는 평가가 필요하다.
+
+시간 정렬(Temporal Alignment)은 로보틱스에서 특히 중요하다. 센서는 서로 다른 주기로 동작하고 지연을 포함할 수 있다. 카메라 프레임, 관절 상태, 힘 측정값, 모터 명령은 정확하게 동기화되어야 한다. 힘의 급증이 잘못된 이미지나 행동과 연결되면 모델은 잘못된 물리 관계를 학습할 수 있다. 따라서 타임스탬프(Timestamp), 보간(Interpolation), 하드웨어 동기화(Hardware Synchronization), 상대 시간 인코딩(Relative-Time Encoding)은 단순한 데이터 엔지니어링 세부사항이 아니라 멀티모달 학습의 일부이다.
+
+공간 정렬(Spatial Alignment)도 동일하게 중요하다. 카메라 특징, 깊이 점, LiDAR 측정값, 로봇 링크, 지도 위치는 서로 다른 좌표계를 사용할 수 있다. 이러한 좌표계가 일치하지 않으면 교차 모달 학습은 신뢰할 수 없게 된다. 알려진 보정 정보(Calibration)를 이용하여 관측을 공통 기하 좌표계로 투영하고, 학습 모델이 불확실한 대응 관계를 보완할 수 있다. 명시적 기하학과 학습 기반 정렬을 결합하는 방식이 신경망이 모든 공간 변환을 데이터만으로 추론하도록 하는 것보다 일반적으로 더 신뢰성이 높다.
+
+정렬이 항상 모든 모달리티를 동일한 표현으로 강제하는 것을 의미하지는 않는다. 일부 정보는 여러 모달리티에서 공유되지만, 다른 정보는 특정 모달리티에만 존재한다. 언어는 이미지에서 직접 관측할 수 없는 목적과 의도를 표현할 수 있다. 촉각 센싱은 시각적으로 보이지 않는 표면 마찰을 제공할 수 있다. 강력한 표현은 공유되는 의미 요소와 모달리티별 고유 요소를 분리할 수 있어야 한다.
+
+융합(Fusion)은 정렬된 정보를 결합하는 과정이다. 초기 융합(Early Fusion)은 입력 단계에 가까운 위치에서 여러 모달리티를 합친다. 특징을 공통 공간으로 투영하고 함께 처리한다. 이를 통해 모달리티 사이의 직접적인 상호작용이 가능하지만, 비디오와 같이 하나의 모달리티가 다른 모달리티보다 훨씬 많은 토큰을 생성할 경우 비효율적일 수 있다.
+
+후기 융합(Late Fusion)은 각 모달리티를 독립적으로 처리한 뒤 의사결정 단계에 가까운 위치에서 결과를 결합한다. 모달리티별 구조를 보존하고 구현을 단순화할 수 있지만, 세부적인 상호작용을 놓칠 수 있다. 모델이 객체의 외형과 로봇 상태를 각각 이해하더라도 현재 관절 구성이 해당 객체에 접근하는 데 어떤 영향을 주는지는 이해하지 못할 수 있다.
+
+중간 융합(Intermediate Fusion)은 일반적으로 가장 실용적인 접근이다. 각 모달리티는 먼저 특화된 인코더(Encoder)를 통과하고, 이후 교차 어텐션(Cross-Attention), 공유 잠재 토큰(Shared Latent Token), 게이팅(Gating), 멀티모달 트랜스포머 계층을 통해 정보를 교환한다. 이를 통해 전문화와 상호작용 사이의 균형을 확보할 수 있다.
+
+교차 어텐션은 핵심적인 융합 메커니즘이다. 하나의 모달리티에서 생성된 쿼리(Query)가 다른 모달리티의 키(Key)와 값(Value)에서 필요한 정보를 검색한다. 언어 명령은 이미지 영역을 질의할 수 있고, 행동 쿼리는 로봇 상태와 기하 정보를 검색할 수 있으며, 접촉 상태 쿼리는 힘과 촉각 증거를 검색할 수 있다. 교차 어텐션은 모든 특징을 동일하게 결합하지 않고 현재 작업에 따라 정보 교환이 달라지도록 한다.
+
+게이트 융합(Gated Fusion)은 또 다른 접근이다. 모델은 각 모달리티가 얼마나 강하게 기여해야 하는지를 학습한다. 자유 공간 이동 중에는 비전과 기하 정보가 중심이 될 수 있고, 접촉 중에는 힘과 촉각 신호가 더 중요해질 수 있다. 카메라 영상이 흐려지거나 센서가 고장나면 게이트가 해당 모달리티의 기여도를 낮출 수 있다.
+
+신뢰할 수 있는 게이팅을 위해서는 불확실성 정보가 필요하다. 특징값이 강하다는 이유만으로 특정 모달리티가 높은 가중치를 받아서는 안 된다. 센서 신뢰도, 보정 품질, 관측의 최신성(Observation Age), 고장 상태가 융합에 반영되어야 한다. 여러 모달리티가 일치한다고 해서 항상 정확한 것은 아니다. 서로 다른 모달리티가 동일한 원인으로 잘못된 정보를 제공할 수도 있기 때문이다.
+
+융합은 대칭적(Symmetric)이거나 비대칭적(Asymmetric)일 수 있다. 대칭 융합은 여러 모달리티를 동등한 정보원으로 취급한다. 비대칭 융합은 하나의 모달리티가 다른 모달리티를 조건화하도록 한다. 로보틱스에서는 언어가 목표를 제공하고 비전이 증거를 제공하는 경우가 많다. 로봇 상태는 물리적 제약을 정의하고 지도는 전역 구조를 제공한다. 이러한 역할은 서로 다르기 때문에 비대칭 융합이 더 적합한 경우가 많다.
+
+공유 잠재 공간(Shared Latent Space)은 작업과 모달리티 사이의 전이를 지원할 수 있다. 이미지, 언어, 상태, 행동이 객체 정체성(Object Identity), 도달 가능성(Reachability), 움직임, 접촉, 작업 진행 상태와 같은 공통 개념을 표현하는 잠재 표현으로 투영된다. 이후 모델은 하나의 모달리티에서 학습한 지식을 다른 모달리티 해석에 재사용할 수 있다.
+
+그러나 모든 정보를 완전히 통합하는 것은 오히려 해로울 수 있다. 저수준 모터 전류와 고수준 언어는 반드시 동일한 표현 수준에 존재할 필요가 없다. 따라서 계층형 멀티모달 모델(Hierarchical Multimodal Model)은 여러 잠재 공간을 유지한다. 의미 공간(Semantic Space)은 객체와 목표를 표현하고, 기하 공간(Geometric Space)은 위치와 형상을 표현하며, 시간 공간(Temporal Space)은 동역학을 표현하고, 행동 공간(Action Space)은 실행 가능한 행동을 표현한다.
+
+멀티모달 생성(Multimodal Generation)은 하나 이상의 모달리티를 이용하여 다른 모달리티나 물리적 출력을 생성한다. 이미지 캡셔닝(Image Captioning)은 비전으로부터 언어를 생성하고, 텍스트-이미지 모델(Text-to-Image Model)은 언어로부터 시각 콘텐츠를 생성한다. 피지컬 AI에서는 비전과 명령으로부터 행동을 생성하거나, 현재 관측과 후보 행동으로부터 미래 상태를 생성하거나, 다른 모달리티로부터 누락된 센서 정보를 복원하는 것이 포함될 수 있다.
+
+비전-언어-행동 모델(Vision-Language-Action Model)은 대표적인 사례이다. 모델은 시각 관측과 언어 명령을 입력받아 로봇 행동을 생성한다. 생성되는 출력은 이산 행동 토큰(Discrete Action Token), 연속 제어값(Continuous Control Value), 궤적(Trajectory), 스킬 호출(Skill Call), 행동 청크(Action Chunk)가 될 수 있다. 이는 멀티모달 생성을 디지털 콘텐츠에서 실제 물리 행동으로 확장한다.
+
+행동 생성은 텍스트 생성보다 더 강한 제약조건을 요구한다. 그럴듯한 문장은 의미적으로 일관되기만 하면 되지만, 로봇 행동은 운동학(Kinematics), 동역학(Dynamics), 시간 제약, 충돌 한계, 공구 형상, 안전 규칙을 만족해야 한다. 따라서 멀티모달 생성 모델은 출력 결과를 검증하는 더 큰 제어 아키텍처 안에서 동작해야 한다.
+
+월드 모델(World Model)은 또 다른 생성 형태이다. 월드 모델은 행동 이후 환경이 어떻게 변화할지를 예측한다. 미래 이미지, 객체 자세, 접촉 상태, 로봇 궤적, 잠재 장면 표현을 생성할 수 있다. 후보 행동을 실제로 실행하기 전에 비교할 수 있기 때문에 계획을 지원한다.
+
+생성된 미래의 품질을 시각적 사실성만으로 평가해서는 안 된다. 장면은 그럴듯해 보이지만 기하학이나 물리가 틀릴 수 있다. 로보틱스에서는 제어와 관련된 정확도가 더 중요하다. 객체 위치, 자유 공간, 접촉, 속도, 지지 관계(Support Relationship), 충돌 위험이 올바르게 표현되어야 한다.
+
+조건부 생성(Conditional Generation)은 누락된 모달리티 복원에도 사용할 수 있다. 깊이 센서가 일시적으로 고장나면 RGB 이미지와 움직임 이력으로 깊이를 추정할 수 있다. 카메라가 가려지면 이전 관측과 고유감각으로 객체 상태를 추정할 수 있다. 이러한 복원은 강건성을 높일 수 있지만, 안전이 중요한 기능에서 예측값을 검증된 실제 측정값과 동일하게 취급해서는 안 된다.
+
+생성 모델은 물리적 미래가 불확실할 수 있기 때문에 일반적으로 확률적이다. 여러 파지 궤적이 모두 유효할 수 있고, 객체가 여러 방식으로 움직일 수도 있다. 확산 모델(Diffusion Model), 플로우 기반 모델(Flow-Based Model), 자기회귀 모델, 잠재변수 모델(Latent-Variable Model)은 여러 가능한 결과를 표현할 수 있다.
+
+모델은 모든 상황을 하나의 확신 있는 예측으로 축소하기보다 불확실성을 표현해야 한다. 여러 후보 결과를 생성한 뒤 플래너, 월드 모델, 안전 제약을 통해 평가할 수 있다. 높은 불확실성은 추가 센싱, 감속, 인간 지원을 유발할 수 있다.
+
+정렬, 융합, 생성의 관계는 순환적이다. 좋은 정렬은 의미 있는 융합을 지원한다. 좋은 융합은 더 나은 생성을 가능하게 하는 표현을 만든다. 생성된 예측은 실제 관측과 비교되어 향후 정렬 및 표현 학습을 개선하는 데 사용될 수 있다.
+
+예를 들어 로봇은 언어 명령을 객체와 정렬하고, 시각 기하와 관절 상태를 융합한 뒤 파지 궤적을 생성한다. 실행 이후 힘과 촉각 피드백을 통해 파지 성공 여부를 확인한다. 예측 결과와 실제 결과의 차이는 세 과정 모두를 개선하기 위한 학습 신호가 된다.
+
+멀티모달 로봇 데이터는 라벨링 비용이 크기 때문에 자기지도 학습(Self-Supervised Learning)이 중요하다. 하나의 모달리티로부터 다른 모달리티를 예측하거나, 마스킹된 구간을 복원하거나, 동기화된 스트림을 매칭하거나, 시간적 불일치를 탐지하거나, 미래 관측을 예측하면서 학습할 수 있다.
+
+교차 모달 예측(Cross-Modal Prediction)은 물리적 이해를 촉진한다. 행동과 로봇 상태로부터 시각 변화를 예측하면 행동 결과를 학습할 수 있다. 비전과 움직임으로부터 힘을 예측하면 접촉 관계를 학습할 수 있다. 궤적으로부터 언어 설명을 예측하면 작업 의미를 학습할 수 있다.
+
+그러나 모델은 쉬운 통계적 지름길을 사용할 수 있다. 따라서 데이터셋의 규칙이 아니라 인과적·물리적 관계를 학습하도록 학습 목표를 신중하게 설계해야 한다.
+
+멀티모달 학습은 누락되거나 손상된 모달리티도 처리해야 한다. 실제 로봇은 센서 고장, 패킷 손실(Packet Loss), 눈부심(Glare), 가림(Occlusion), 보정 드리프트(Calibration Drift), 통신 지연을 경험한다. 학습에는 모달리티 드롭아웃(Modality Dropout)과 손상된 입력이 포함되어야 하며, 모델이 하나의 센서에 완전히 의존하지 않도록 해야 한다.
+
+정보가 누락되면 시스템은 누락 사실을 명시적으로 표현하고 신뢰도를 낮춰야 한다. 0 벡터를 유효한 측정값으로 오해해서는 안 된다. 모델은 다른 모달리티를 이용해 계속 동작하거나, 추가 관측을 요청하거나, 안전 상태(Safe State)로 진입할 수 있다.
+
+평가는 세 가지 핵심 과정을 각각 측정해야 한다. 정렬은 객체 접지(Object Grounding), 시간 대응, 좌표 일관성으로 시험할 수 있다. 융합은 모달리티 제거 실험(Modality Ablation), 센서 손상, 작업 조건부 관련성(Task-Conditioned Relevance)을 통해 평가할 수 있다. 생성은 행동 성공률, 미래 예측, 기하학적 정확도, 불확실성 보정으로 평가할 수 있다.
+
+최종 작업 성공률만으로는 충분하지 않다. 로봇은 다른 모달리티를 무시하고 하나의 지배적인 모달리티만 이용하여 성공할 수도 있다. 제거 실험은 각 모달리티가 실제로 의미 있게 기여하는지를 보여준다. 반사실적 시험(Counterfactual Test)은 언어, 기하, 힘 입력을 변경했을 때 출력이 적절하게 달라지는지를 평가할 수 있다.
+
+생성된 행동은 이후 관측을 변화시키기 때문에 폐루프 평가(Closed-Loop Evaluation)가 필수적이다. 기록된 데이터에서는 잘 동작하는 모델도 자신의 오류가 다음 상태에 영향을 주면 실패할 수 있다. 따라서 시뮬레이션과 실제 로봇 시험은 복구, 강건성, 지연 시간, 안전 개입을 평가해야 한다.
+
+멀티모달 모델은 계층형 아키텍처의 일부로 유지되어야 한다. 학습 기반 정렬과 융합은 유연한 해석을 제공하고, 결정론적 기하학, 제어, 안전 시스템은 물리적 제약을 강제한다. 언어 접지는 목표 객체를 식별할 수 있지만, 충돌 검사는 궤적을 별도로 검증해야 한다. 생성 행동은 움직임을 제안할 수 있지만, 저수준 제어기는 안정성을 유지해야 한다.
+
+피지컬 AI를 위한 멀티모달 학습의 장기적인 목표는 단순히 여러 센서 유형을 하나의 네트워크 안에 넣는 것이 아니다. 로봇, 환경, 작업, 물리적 결과를 일관되게 표현하는 모델을 구축하는 것이다.
+
+이러한 모델은 어떤 관측이 동일한 객체를 설명하는지, 서로 다른 센서가 어떻게 보완하는지, 어떤 정보가 신뢰할 수 있는지, 행동이 세계를 어떻게 변화시키는지, 언제 추가적인 증거가 필요한지를 이해해야 한다.
+
+정렬은 대응 관계를 제공하고, 융합은 통합된 이해를 제공하며, 생성은 이해를 예측과 행동으로 변환한다. 이 세 과정은 멀티모달 데이터가 체화 지능(Embodied Intelligence)으로 변화하기 위한 이론적 기반을 형성한다.
+
+성공적인 피지컬 AI 파운데이션 모델은 모달리티별 고유 구조를 유지하면서도 공유 개념을 학습해야 한다. 정보의 관련성과 신뢰도에 따라 입력을 통합하고, 물리적으로 실행 가능한 출력을 생성하며, 폐루프 상호작용을 통해 자신의 믿음(Belief)을 갱신해야 한다.
+
+이러한 방식으로 멀티모달 학습은 서로 다른 로봇 센서와 일관된 자율 행동 사이를 연결하는 다리가 된다. 비전, 언어, 기하학, 힘, 상태, 시간, 행동이라는 분리된 정보 흐름을 통합되면서도 구조화된 물리 세계의 표현으로 변환한다.
+
+##  
+
+## 3.2 CLIP Contrastive Image Text Pretraining [w/Code]
+
+![](images/image2.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+Contrastive Language-Image Pretraining (CLIP) represents one of the most influential breakthroughs in multimodal foundation models because it demonstrated that large-scale image and language understanding could be learned without relying on manually annotated classification labels. Instead of treating computer vision as a collection of independent recognition tasks with predefined categories, CLIP learns a shared semantic representation between images and natural language. This shift fundamentally changed how visual intelligence is trained and laid the foundation for modern vision-language models that support open-world recognition, multimodal reasoning, robotic perception, and Physical AI.
+
+Before CLIP, most computer vision systems depended on supervised learning using carefully labeled datasets such as ImageNet. Each image belonged to one predefined class, and the model learned to classify images into those fixed categories. Although highly successful, this approach had important limitations. The number of object classes was limited, creating new categories required additional annotation, and recognition systems struggled with objects or concepts outside the training vocabulary. Robots operating in real environments cannot assume that every possible object has been manually labeled in advance. A warehouse robot, household assistant, or industrial inspection robot continuously encounters unfamiliar tools, components, containers, signs, and situations. A more flexible learning paradigm was therefore required.
+
+CLIP addresses this limitation by replacing manually assigned category labels with naturally occurring image-text pairs collected from large-scale internet data. Instead of learning that an image belongs to class number 143, the model learns that an image corresponds to a descriptive sentence or phrase. The textual description may include object identity, attributes, actions, relationships, materials, colors, context, or abstract concepts. This allows visual representations to become grounded in language rather than fixed numerical labels.
+
+The core principle behind CLIP is contrastive learning. During training, a batch contains many image-text pairs. Each image should become close to its matching text representation while remaining distant from all other text descriptions in the batch. Similarly, each text representation should become close to its corresponding image while remaining separated from unrelated images. Through this objective, the model gradually learns a shared embedding space in which semantically related images and language occupy nearby positions.
+
+The CLIP architecture is conceptually simple but remarkably powerful. Two separate encoders are trained simultaneously. An image encoder converts visual input into a feature vector, while a text encoder converts language into another feature vector. These vectors are projected into a common latent embedding space. Similarity between image and text is usually computed using cosine similarity after feature normalization. Training minimizes a symmetric contrastive loss that encourages correct image-text matching in both directions.
+
+The image encoder may use convolutional neural networks or Vision Transformers. Early CLIP implementations demonstrated that Vision Transformers generally scale better as model size and training data increase. The text encoder is typically based on the Transformer architecture and processes tokenized natural language descriptions. Although both encoders specialize in different input modalities, the contrastive objective gradually aligns their semantic representations.
+
+Unlike traditional classification models, CLIP does not require explicit object labels during inference. Instead, a user can describe arbitrary categories using natural language prompts. Images are compared against text embeddings generated from these prompts, and the closest description determines the prediction. This capability is commonly known as zero-shot classification because the model can recognize categories that were never explicitly introduced as supervised training classes.
+
+Zero-shot recognition dramatically changes deployment flexibility. Rather than retraining a vision model whenever new object categories appear, engineers only need to provide new textual descriptions. A robot deployed in a factory may initially recognize motors, gears, valves, and connectors. Later, new components can often be recognized simply by adding descriptive prompts without retraining the entire visual system.
+
+Prompt engineering therefore becomes an important aspect of CLIP inference. Different textual descriptions of the same object may produce different embedding representations. A prompt such as "a photo of a screwdriver" may produce different results from "an industrial Phillips screwdriver lying on a workbench." Careful prompt design can improve recognition accuracy by matching the language distribution encountered during pretraining.
+
+Prompt ensembles further improve robustness. Multiple textual descriptions representing the same semantic concept are encoded separately, and their embeddings are averaged or combined before similarity computation. This reduces sensitivity to wording variations and allows richer semantic descriptions.
+
+Although prompt engineering improves performance, it also reveals a limitation. The model\'s understanding depends partly on linguistic formulation. Ambiguous language or poorly designed prompts may reduce recognition quality even when the visual information is sufficient.
+
+CLIP learns semantic similarity rather than explicit geometric understanding. Two visually different objects that serve similar purposes may become close in embedding space because their textual descriptions overlap. Likewise, visually similar objects serving different functions may become separated if language distinguishes them clearly. This property supports semantic reasoning but does not automatically provide accurate physical understanding.
+
+For Physical AI, semantic alignment is extremely valuable. Robots often receive instructions expressed in natural language. Connecting language with visual perception allows the robot to ground commands such as "pick up the blue wrench," "inspect the emergency valve," or "avoid damaged containers." Instead of treating language and vision as separate systems, CLIP provides a common semantic space that supports grounding between human instructions and observed objects.
+
+Grounding refers to connecting symbolic descriptions with physical reality. A language model may understand the word "cup," while a vision model detects pixels. CLIP bridges these representations by learning that particular visual features correspond to particular linguistic concepts. This alignment provides an essential building block for embodied intelligence.
+
+However, CLIP alone does not solve complete grounding. It identifies semantic correspondence but does not estimate precise object pose, physical dimensions, grasp points, or contact forces. Additional perception modules remain necessary for robotic manipulation.
+
+CLIP embeddings are highly transferable. Once trained, the visual encoder can support many downstream tasks including image retrieval, object detection, semantic segmentation, visual search, scene understanding, and robot perception. Rather than training separate feature extractors for every application, one pretrained representation can support diverse tasks through lightweight adaptation.
+
+Image retrieval illustrates this capability. Given a text description, the model retrieves visually similar images from a large database. Conversely, given an image, the model retrieves semantically related textual descriptions. Industrial robots may search maintenance manuals using observed components, while inspection systems retrieve historical cases with similar defects.
+
+Semantic search is another important application. Traditional retrieval depends on exact keywords, whereas CLIP retrieves information based on conceptual similarity. A robot searching for "protective gloves" may retrieve images labeled "safety gloves" even if the wording differs. This flexibility supports robust human-robot interaction.
+
+CLIP also improves data organization. Large robot datasets containing millions of images can be indexed using learned embeddings rather than manually assigned categories. Similar observations naturally cluster together, simplifying dataset exploration, anomaly detection, and experience retrieval.
+
+The contrastive objective encourages global semantic consistency but provides limited fine-grained localization. CLIP recognizes that an image contains a wrench but does not necessarily indicate which pixels belong to the wrench. Localization requires additional methods such as region proposals, object detectors, segmentation networks, attention visualization, or grounding models built upon CLIP representations.
+
+Open-vocabulary detection extends CLIP toward localization. Instead of restricting object detectors to fixed categories, visual region proposals are compared with text embeddings. This allows detection of previously unseen categories described by language. Open-vocabulary detection is particularly attractive for robotics because robots cannot anticipate every object encountered during deployment.
+
+Vision-language grounding models further improve localization by connecting words with image regions. Rather than predicting only global similarity, they estimate spatial correspondence between textual phrases and visual evidence. Such grounding supports manipulation, navigation, inspection, and human-robot collaboration.
+
+CLIP has also influenced robot imitation learning. Demonstrations containing images and language can be encoded into shared semantic representations. Similar tasks performed in different environments become easier to compare because language provides high-level semantic structure while images provide environmental detail.
+
+One challenge in robotics is domain shift. Internet images used during CLIP pretraining differ substantially from robot camera images. Industrial cameras, depth sensors, fisheye lenses, thermal imagers, and warehouse lighting create distributions that differ from consumer photography. Without adaptation, recognition performance may decline.
+
+Domain adaptation techniques address this problem. Fine-tuning on robot-specific data, adapter modules, prompt tuning, feature alignment, and self-supervised refinement allow pretrained CLIP representations to adapt while preserving their general semantic knowledge.
+
+Prompt tuning has become particularly attractive because only a small number of learnable prompt parameters must be optimized. The large pretrained model remains frozen while prompts adapt the embedding space to a new domain. This greatly reduces computational cost compared with full model retraining.
+
+Adapter tuning introduces small trainable modules between transformer layers. These adapters specialize CLIP for industrial inspection, warehouse automation, autonomous driving, agricultural robotics, or medical robotics without modifying the entire backbone network.
+
+Although CLIP demonstrates remarkable generalization, it has several limitations. It inherits biases present in internet-scale training data. Cultural imbalance, language imbalance, visual stereotypes, and uneven geographic representation may influence predictions. Robots operating in safety-critical environments require careful evaluation of such biases.
+
+Another limitation concerns physical reasoning. CLIP recognizes semantic concepts but does not directly understand mechanics, mass, friction, deformability, or stability. It may identify a chair without estimating whether the chair supports weight. It may recognize a tool without understanding how it should be manipulated.
+
+Physical interaction requires geometric reasoning beyond semantic alignment. Robots must estimate pose, depth, contact surfaces, reachable regions, collision risk, articulation, and dynamic behavior. CLIP provides semantic understanding but not complete physical knowledge.
+
+Temporal understanding is also limited because CLIP processes individual image-text pairs rather than continuous video. Robot tasks frequently involve evolving scenes, motion prediction, object tracking, and long-term temporal dependencies. Video-language models extend CLIP concepts into sequential representations that incorporate temporal context.
+
+Another challenge involves sensor diversity. Physical AI systems integrate RGB cameras, depth cameras, LiDAR, radar, thermal imaging, tactile sensing, proprioception, and force sensors. Standard CLIP primarily aligns images with language. Future multimodal foundation models must align many additional sensing modalities within a unified semantic representation.
+
+Several successor models have expanded CLIP\'s ideas. ALIGN demonstrated that even larger web-scale datasets improve contrastive learning. LiT separated image and text training through locked-image tuning. SigLIP introduced sigmoid-based contrastive objectives. EVA-CLIP improved visual encoder scaling. OpenCLIP provided open-source implementations trained on publicly available datasets, accelerating research across academia and industry.
+
+These models illustrate that the contrastive learning paradigm is highly scalable. Larger datasets, stronger encoders, improved optimization, and better data filtering consistently improve representation quality. Nevertheless, increasing scale alone does not solve grounding, reasoning, or physical interaction.
+
+Vision-language models such as Flamingo, BLIP, BLIP-2, PaLI, Kosmos, and GPT-4-class multimodal systems build upon CLIP-like alignment principles while introducing cross-attention, multimodal transformers, instruction tuning, and autoregressive generation. Rather than producing only embeddings, these models generate language, answer questions, follow instructions, and perform multimodal reasoning.
+
+For robotics, CLIP frequently serves as the perception backbone while larger multimodal models perform reasoning and planning. The perception module converts raw observations into semantic embeddings. Higher-level reasoning modules combine these embeddings with language, memory, world models, and planning algorithms.
+
+This layered architecture reflects the separation between recognition and decision making. CLIP determines what the robot observes. Planning modules determine what the robot should do. Control systems determine how those decisions become executable physical motion.
+
+Evaluation of CLIP-based systems should extend beyond image classification accuracy. Zero-shot recognition, retrieval performance, cross-modal alignment quality, robustness under lighting variation, domain transfer, prompt sensitivity, adversarial robustness, localization capability, and calibration should all be considered.
+
+Robot-specific evaluation should further measure grounding accuracy, task completion, object retrieval, instruction following, manipulation success, and robustness under sensor degradation. Closed-loop experiments provide more meaningful evaluation than offline image benchmarks because robot actions influence future observations.
+
+Data quality strongly influences contrastive learning. Incorrect image-text pairs introduce noisy supervision that weakens semantic alignment. Large-scale filtering, deduplication, caption refinement, and quality estimation therefore play essential roles during dataset construction.
+
+Negative sampling is equally important. Effective contrastive learning requires informative negative examples rather than random unrelated pairs. Hard negatives force the model to distinguish visually similar but semantically different concepts, improving embedding discrimination.
+
+Batch size also affects contrastive performance because each batch supplies negative examples. Larger batches generally improve representation quality by exposing the model to more diverse negative comparisons. Distributed training therefore became an important engineering component of CLIP-scale learning.
+
+Temperature scaling controls similarity sharpness during contrastive optimization. Appropriate temperature values balance separation between positive and negative pairs. Poor temperature selection can produce unstable optimization or reduced embedding quality.
+
+Interpretability remains an active research area. Although embedding similarity provides semantic correspondence, understanding exactly which visual evidence contributes to alignment remains challenging. Attention visualization, saliency analysis, embedding probing, and feature attribution methods help reveal learned representations but do not fully explain model reasoning.
+
+Future Physical AI foundation models will likely extend CLIP beyond static image-language alignment into unified multimodal world representations. Images, videos, depth maps, LiDAR observations, robot states, tactile sensing, audio, actions, maps, and language may all share coordinated latent representations. Rather than learning isolated modality pairs, future systems will learn complete models of embodied interaction.
+
+In these systems, contrastive learning will remain an important training objective but will be combined with reconstruction, prediction, imitation learning, reinforcement learning, world modeling, and generative objectives. Alignment will become one component of a larger embodied learning framework.
+
+Ultimately, CLIP demonstrated that semantic understanding emerges naturally when visual observations and language descriptions are aligned at massive scale. Its success transformed computer vision from closed-set recognition toward open-world semantic understanding and established contrastive multimodal learning as a central paradigm for foundation models.
+
+For Physical AI, CLIP provides the semantic bridge between perception and language. Although additional geometric reasoning, temporal modeling, and physical interaction mechanisms remain necessary, CLIP established the principle that robots can learn visual concepts through language rather than fixed labels. This idea continues to influence nearly every modern vision-language foundation model and forms one of the essential theoretical foundations upon which future embodied intelligence systems will be built.
+
+대조적 언어-이미지 사전학습(Contrastive Language-Image Pretraining, CLIP)은 수작업으로 주석된 분류 라벨에 의존하지 않고도 대규모 이미지 및 언어 이해 능력을 학습할 수 있음을 보여주었다는 점에서 멀티모달 파운데이션 모델(Multimodal Foundation Model) 분야의 가장 영향력 있는 혁신 중 하나이다. CLIP은 컴퓨터 비전(Computer Vision)을 사전에 정의된 범주를 사용하는 개별 인식 작업들의 집합으로 다루는 대신, 이미지와 자연어 사이의 공유 의미 표현(Shared Semantic Representation)을 학습한다. 이러한 변화는 시각 지능(Visual Intelligence)의 학습 방식을 근본적으로 바꾸었으며, 개방형 세계 인식(Open-World Recognition), 멀티모달 추론(Multimodal Reasoning), 로봇 인식(Robot Perception), 피지컬 AI를 지원하는 현대 비전-언어 모델(Vision-Language Model)의 기반을 마련하였다.
+
+CLIP이 등장하기 이전에는 대부분의 컴퓨터 비전 시스템이 ImageNet과 같이 세밀하게 라벨링된 데이터셋을 사용하는 지도학습(Supervised Learning)에 의존했다. 각 이미지는 미리 정의된 하나의 클래스(Class)에 속하며, 모델은 이미지를 고정된 범주 중 하나로 분류하도록 학습되었다. 이러한 방식은 높은 성공을 거두었지만 중요한 한계도 가지고 있었다. 인식할 수 있는 객체 클래스 수가 제한되었고, 새로운 범주를 추가하려면 추가적인 라벨링 작업이 필요했으며, 학습 어휘에 포함되지 않은 객체나 개념을 처리하는 데 어려움이 있었다. 실제 환경에서 동작하는 로봇은 가능한 모든 객체가 사전에 수작업으로 라벨링되어 있다고 가정할 수 없다. 창고 로봇, 가정용 보조 로봇, 산업 검사 로봇은 익숙하지 않은 공구, 부품, 용기, 표지판, 상황을 지속적으로 마주친다. 따라서 더 유연한 학습 패러다임(Learning Paradigm)이 필요했다.
+
+CLIP은 수작업으로 지정된 범주 라벨을 대규모 인터넷 데이터에서 자연스럽게 수집된 이미지-텍스트 쌍(Image-Text Pair)으로 대체한다. 모델은 이미지가 클래스 번호 143에 속한다고 학습하는 대신, 해당 이미지가 특정 설명 문장이나 구절과 대응한다는 사실을 학습한다. 텍스트 설명에는 객체 정체성(Object Identity), 속성(Attribute), 행동(Action), 관계(Relationship), 재질(Material), 색상(Color), 문맥(Context), 추상 개념(Abstract Concept)이 포함될 수 있다. 이를 통해 시각 표현은 고정된 숫자 라벨이 아니라 언어에 접지(Grounding)된다.
+
+CLIP의 핵심 원리는 대조학습(Contrastive Learning)이다. 학습 중 하나의 배치(Batch)에는 여러 이미지-텍스트 쌍이 포함된다. 각 이미지 표현은 자신과 대응하는 텍스트 표현에 가까워져야 하며, 같은 배치 안의 다른 텍스트 설명과는 멀어져야 한다. 마찬가지로 각 텍스트 표현은 대응하는 이미지와 가까워지고, 관련 없는 이미지와는 분리되어야 한다. 이러한 학습 목표를 통해 모델은 의미적으로 관련된 이미지와 언어가 공유 임베딩 공간(Shared Embedding Space)에서 가까운 위치를 차지하도록 학습한다.
+
+CLIP 아키텍처는 개념적으로 단순하지만 매우 강력하다. 서로 다른 두 개의 인코더(Encoder)가 동시에 학습된다. 이미지 인코더(Image Encoder)는 시각 입력을 특징 벡터(Feature Vector)로 변환하고, 텍스트 인코더(Text Encoder)는 언어 입력을 또 다른 특징 벡터로 변환한다. 이 벡터들은 공통 잠재 임베딩 공간(Common Latent Embedding Space)으로 투영된다. 이미지와 텍스트 사이의 유사도는 일반적으로 특징 정규화(Feature Normalization) 이후 코사인 유사도(Cosine Similarity)를 이용하여 계산한다. 학습 과정에서는 이미지에서 텍스트로, 텍스트에서 이미지로의 올바른 대응을 모두 강화하는 대칭형 대조 손실(Symmetric Contrastive Loss)을 최소화한다.
+
+이미지 인코더는 합성곱 신경망(Convolutional Neural Network)이나 비전 트랜스포머(Vision Transformer)를 사용할 수 있다. 초기 CLIP 구현은 모델 크기와 학습 데이터가 증가할수록 비전 트랜스포머가 일반적으로 더 우수한 확장성(Scalability)을 보인다는 점을 보여주었다. 텍스트 인코더는 일반적으로 트랜스포머 아키텍처를 사용하며 토큰화된 자연어 설명을 처리한다. 두 인코더는 서로 다른 입력 모달리티에 특화되어 있지만, 대조학습 목표를 통해 의미 표현이 점진적으로 정렬된다.
+
+기존 분류 모델과 달리 CLIP은 추론 과정에서 명시적인 객체 라벨을 필요로 하지 않는다. 대신 사용자가 자연어 프롬프트(Prompt)를 이용해 임의의 범주를 설명할 수 있다. 이미지는 이러한 프롬프트에서 생성된 텍스트 임베딩(Text Embedding)과 비교되며, 가장 가까운 설명이 예측 결과가 된다. 이 능력은 지도학습 클래스 형태로 명시적으로 학습되지 않은 범주도 인식할 수 있기 때문에 제로샷 분류(Zero-Shot Classification)라고 한다.
+
+제로샷 인식(Zero-Shot Recognition)은 배포 유연성을 크게 향상시킨다. 새로운 객체 범주가 등장할 때마다 비전 모델을 다시 학습하는 대신, 엔지니어는 새로운 텍스트 설명만 제공하면 된다. 공장에 배포된 로봇이 처음에는 모터, 기어, 밸브, 커넥터를 인식하도록 구성되었더라도, 이후 새로운 부품에 대한 설명 프롬프트를 추가하는 것만으로 전체 비전 시스템을 재학습하지 않고 인식 범위를 확장할 수 있다.
+
+따라서 프롬프트 엔지니어링(Prompt Engineering)은 CLIP 추론에서 중요한 요소가 된다. 동일한 객체를 설명하는 문장이라도 표현 방식에 따라 서로 다른 임베딩을 생성할 수 있다. 예를 들어 "드라이버 사진(a photo of a screwdriver)"과 "작업대 위에 놓인 산업용 십자드라이버(an industrial Phillips screwdriver lying on a workbench)"는 서로 다른 결과를 만들 수 있다. 사전학습 중 접한 언어 분포와 유사한 프롬프트를 설계하면 인식 정확도를 향상시킬 수 있다.
+
+프롬프트 앙상블(Prompt Ensemble)은 강건성을 더욱 향상시킨다. 동일한 의미 개념을 나타내는 여러 텍스트 설명을 각각 인코딩한 뒤, 임베딩을 평균하거나 결합하여 최종 유사도를 계산한다. 이를 통해 단어 표현의 차이에 대한 민감도를 낮추고 더 풍부한 의미 설명을 사용할 수 있다.
+
+프롬프트 엔지니어링은 성능을 향상시키지만 동시에 하나의 한계도 보여준다. 모델의 이해 성능이 언어 표현 방식에 부분적으로 의존한다는 점이다. 시각 정보가 충분하더라도 모호한 언어나 부적절한 프롬프트를 사용하면 인식 품질이 저하될 수 있다.
+
+CLIP은 명시적인 기하학적 이해(Geometric Understanding)보다 의미적 유사도(Semantic Similarity)를 학습한다. 시각적으로 매우 다른 객체라도 용도가 유사하면 텍스트 설명이 겹치기 때문에 임베딩 공간에서 가까워질 수 있다. 반대로 외형은 비슷하지만 기능이 다른 객체는 언어에서 명확히 구분될 경우 멀어질 수 있다. 이러한 특성은 의미 추론에는 유용하지만 자동으로 정확한 물리 이해를 제공하지는 않는다.
+
+피지컬 AI에서 의미 정렬(Semantic Alignment)은 매우 중요하다. 로봇은 자연어로 표현된 명령을 자주 받는다. 언어와 시각 인식을 연결하면 "파란색 렌치를 집어라", "비상 밸브를 검사하라", "손상된 용기를 피하라"와 같은 명령을 현재 관측된 객체에 접지할 수 있다. CLIP은 언어와 비전을 별개의 시스템으로 처리하지 않고 공통 의미 공간을 통해 연결할 수 있도록 한다.
+
+접지(Grounding)는 상징적 설명(Symbolic Description)을 실제 물리 세계와 연결하는 과정이다. 언어 모델은 "컵(cup)"이라는 단어를 이해할 수 있고, 비전 모델은 픽셀을 처리할 수 있다. CLIP은 특정 시각 특징이 특정 언어 개념과 대응한다는 사실을 학습함으로써 두 표현을 연결한다. 이러한 정렬은 체화 지능(Embodied Intelligence)의 중요한 기반 요소이다.
+
+그러나 CLIP만으로 완전한 접지를 해결할 수는 없다. CLIP은 의미적 대응 관계를 찾을 수 있지만 정확한 객체 자세(Object Pose), 실제 크기, 파지점(Grasp Point), 접촉력(Contact Force)을 추정하지는 않는다. 로봇 조작을 위해서는 추가적인 인식 모듈이 필요하다.
+
+CLIP 임베딩은 높은 전이 가능성(Transferability)을 가진다. 한 번 학습된 시각 인코더는 이미지 검색(Image Retrieval), 객체 검출(Object Detection), 의미 분할(Semantic Segmentation), 시각 검색(Visual Search), 장면 이해(Scene Understanding), 로봇 인식 등 다양한 후속 작업을 지원할 수 있다. 모든 응용 분야마다 별도의 특징 추출기를 새로 학습하는 대신, 하나의 사전학습된 표현을 경량 적응(Lightweight Adaptation)을 통해 여러 작업에 사용할 수 있다.
+
+이미지 검색은 이러한 능력을 잘 보여주는 사례이다. 텍스트 설명을 입력하면 모델은 대규모 데이터베이스에서 의미적으로 유사한 이미지를 검색할 수 있다. 반대로 이미지를 입력하면 관련된 텍스트 설명을 검색할 수 있다. 산업용 로봇은 관측된 부품을 이용하여 유지보수 매뉴얼을 검색할 수 있고, 검사 시스템은 유사한 결함의 과거 사례를 검색할 수 있다.
+
+의미 검색(Semantic Search)도 중요한 활용 분야이다. 기존 검색은 정확히 일치하는 키워드에 의존하지만, CLIP은 개념적 유사성을 기준으로 정보를 검색한다. 로봇이 "보호 장갑(protective gloves)"을 검색할 때 텍스트 라벨이 "안전 장갑(safety gloves)"으로 되어 있는 이미지를 찾을 수 있다. 이러한 유연성은 강건한 인간-로봇 상호작용(Human-Robot Interaction)을 지원한다.
+
+CLIP은 데이터 정리에도 활용할 수 있다. 수백만 장의 로봇 이미지를 포함하는 대규모 데이터셋을 수작업 분류 대신 학습된 임베딩을 이용해 인덱싱할 수 있다. 유사한 관측은 자연스럽게 군집화(Clustering)되므로 데이터셋 탐색, 이상 탐지(Anomaly Detection), 경험 검색(Experience Retrieval)이 쉬워진다.
+
+대조학습 목표는 전역적인 의미 일관성을 강화하지만 세밀한 위치 추정 능력은 제한적이다. CLIP은 이미지 안에 렌치가 있다는 사실은 인식할 수 있지만, 어떤 픽셀이 렌치에 해당하는지를 반드시 알려주지는 않는다. 위치 추정을 위해서는 영역 제안(Region Proposal), 객체 검출기(Object Detector), 분할 네트워크(Segmentation Network), 어텐션 시각화(Attention Visualization), CLIP 표현을 기반으로 한 접지 모델이 필요하다.
+
+개방 어휘 객체 검출(Open-Vocabulary Detection)은 CLIP을 위치 추정으로 확장한다. 객체 검출기를 고정된 클래스에 제한하지 않고, 시각 영역 후보를 텍스트 임베딩과 비교한다. 이를 통해 자연어로 설명된 새로운 범주도 검출할 수 있다. 로봇이 배포 중 마주칠 모든 객체를 미리 예측할 수 없다는 점에서 개방 어휘 검출은 매우 유용하다.
+
+비전-언어 접지 모델(Vision-Language Grounding Model)은 단어와 이미지 영역을 직접 연결하여 위치 추정을 개선한다. 전역 유사도만 예측하는 대신 텍스트 구절과 시각 증거 사이의 공간적 대응 관계를 추정한다. 이러한 접지는 조작, 내비게이션, 검사, 인간-로봇 협업을 지원한다.
+
+CLIP은 로봇 모방학습(Imitation Learning)에도 영향을 주었다. 이미지와 언어를 포함하는 시연은 공유 의미 표현으로 인코딩될 수 있다. 언어는 상위 수준의 의미 구조를 제공하고 이미지는 환경의 세부사항을 제공하기 때문에, 서로 다른 환경에서 수행된 유사 작업을 비교하기 쉬워진다.
+
+로보틱스에서 중요한 문제 중 하나는 도메인 이동(Domain Shift)이다. CLIP 사전학습에 사용된 인터넷 이미지는 로봇 카메라 이미지와 상당히 다를 수 있다. 산업용 카메라, 깊이 센서, 어안렌즈(Fisheye Lens), 열화상 카메라(Thermal Imager), 창고 조명은 일반 소비자 사진과 다른 데이터 분포를 만든다. 별도의 적응이 없으면 인식 성능이 저하될 수 있다.
+
+도메인 적응(Domain Adaptation) 기법은 이러한 문제를 해결한다. 로봇 특화 데이터에 대한 미세조정(Fine-Tuning), 어댑터 모듈(Adapter Module), 프롬프트 튜닝(Prompt Tuning), 특징 정렬(Feature Alignment), 자기지도 개선(Self-Supervised Refinement)을 사용하면 일반 의미 지식을 유지하면서 로봇 환경에 적응할 수 있다.
+
+프롬프트 튜닝은 소수의 학습 가능한 프롬프트 파라미터만 최적화하면 되기 때문에 특히 매력적이다. 대형 사전학습 모델은 동결(Frozen)한 채 프롬프트만 새로운 도메인에 맞게 조정할 수 있다. 전체 모델 재학습보다 계산 비용이 훨씬 적다.
+
+어댑터 튜닝(Adapter Tuning)은 트랜스포머 계층 사이에 작은 학습 모듈을 삽입한다. 이러한 어댑터는 전체 백본 네트워크를 수정하지 않고도 CLIP을 산업 검사, 창고 자동화, 자율주행, 농업 로봇, 의료 로봇에 특화할 수 있다.
+
+CLIP은 뛰어난 일반화 능력을 보여주지만 여러 한계를 가진다. 인터넷 규모 학습 데이터의 편향(Bias)을 그대로 물려받을 수 있다. 문화적 불균형, 언어 불균형, 시각적 고정관념, 지역별 데이터 불균형이 예측 결과에 영향을 줄 수 있다. 안전이 중요한 환경에서 동작하는 로봇은 이러한 편향을 신중하게 평가해야 한다.
+
+또 다른 한계는 물리 추론(Physical Reasoning)이다. CLIP은 의미 개념을 인식하지만 역학(Mechanics), 질량(Mass), 마찰(Friction), 변형성(Deformability), 안정성(Stability)을 직접 이해하지 않는다. 의자를 인식하더라도 실제로 사람의 무게를 지탱할 수 있는지 판단하지 못할 수 있다. 공구를 인식하더라도 어떻게 조작해야 하는지는 이해하지 못할 수 있다.
+
+물리적 상호작용에는 의미 정렬 이상의 기하 추론이 필요하다. 로봇은 자세, 깊이, 접촉면, 도달 가능 영역, 충돌 위험, 관절 구조(Articulation), 동적 거동(Dynamic Behavior)을 추정해야 한다. CLIP은 의미 이해를 제공하지만 완전한 물리 지식을 제공하지는 않는다.
+
+시간 이해(Temporal Understanding)도 제한적이다. CLIP은 연속적인 비디오가 아니라 개별 이미지-텍스트 쌍을 처리하도록 설계되었다. 로봇 작업은 변화하는 장면, 움직임 예측, 객체 추적(Object Tracking), 장기 시간 의존성을 포함한다. 비디오-언어 모델(Video-Language Model)은 CLIP의 개념을 시간 문맥을 포함하는 순차 표현으로 확장한다.
+
+센서 다양성도 또 다른 과제이다. 피지컬 AI 시스템은 RGB 카메라, 깊이 카메라, LiDAR, 레이더(Radar), 열화상, 촉각, 고유감각, 힘 센서를 통합한다. 기본 CLIP은 주로 이미지와 언어를 정렬한다. 미래의 멀티모달 파운데이션 모델은 더 많은 센서 모달리티를 하나의 조정된 의미 표현(Coordinated Semantic Representation) 안에 정렬해야 한다.
+
+여러 후속 모델은 CLIP의 개념을 확장하였다. ALIGN은 더 큰 웹 규모 데이터셋이 대조학습 성능을 향상시킨다는 점을 보여주었다. LiT는 잠금 이미지 튜닝(Locked-Image Tuning)을 통해 이미지와 텍스트 학습을 분리하였다. SigLIP은 시그모이드 기반 대조학습 목표(Sigmoid-Based Contrastive Objective)를 도입하였다. EVA-CLIP은 시각 인코더의 확장성을 개선하였다. OpenCLIP은 공개 데이터셋으로 학습할 수 있는 오픈소스 구현을 제공하여 학계와 산업계의 연구를 가속하였다.
+
+이러한 모델은 대조학습 패러다임이 높은 확장성을 가진다는 사실을 보여준다. 더 큰 데이터셋, 더 강력한 인코더, 개선된 최적화, 더 나은 데이터 필터링은 지속적으로 표현 품질을 향상시킨다. 그러나 단순히 규모를 늘리는 것만으로 접지, 추론, 물리적 상호작용 문제를 해결할 수는 없다.
+
+Flamingo, BLIP, BLIP-2, PaLI, Kosmos, GPT-4급 멀티모달 시스템과 같은 비전-언어 모델은 CLIP과 유사한 정렬 원리를 기반으로 교차 어텐션(Cross-Attention), 멀티모달 트랜스포머(Multimodal Transformer), 지시 튜닝(Instruction Tuning), 자기회귀 생성(Autoregressive Generation)을 도입하였다. 이러한 모델은 단순히 임베딩을 생성하는 것을 넘어 언어 생성, 질의응답, 명령 수행, 멀티모달 추론을 수행한다.
+
+로보틱스에서는 CLIP이 인식 백본(Perception Backbone) 역할을 수행하고, 더 큰 멀티모달 모델이 추론과 계획을 담당하는 경우가 많다. 인식 모듈은 원시 관측을 의미 임베딩으로 변환한다. 상위 추론 모듈은 이 임베딩을 언어, 메모리, 월드 모델(World Model), 계획 알고리즘과 결합한다.
+
+이러한 계층형 아키텍처는 인식과 의사결정을 분리한다. CLIP은 로봇이 무엇을 보고 있는지를 판단한다. 계획 모듈은 로봇이 무엇을 해야 하는지를 결정한다. 제어 시스템은 그 결정을 실제 실행 가능한 물리 동작으로 변환한다.
+
+CLIP 기반 시스템의 평가는 이미지 분류 정확도만으로는 충분하지 않다. 제로샷 인식, 검색 성능, 교차 모달 정렬 품질, 조명 변화에 대한 강건성, 도메인 전이, 프롬프트 민감도, 적대적 강건성(Adversarial Robustness), 위치 추정 능력, 신뢰도 보정(Calibration)을 함께 고려해야 한다.
+
+로봇 특화 평가는 접지 정확도, 작업 완료율, 객체 검색, 명령 수행, 조작 성공률, 센서 성능 저하 상황에서의 강건성을 추가로 측정해야 한다. 로봇 행동은 이후 관측을 변화시키므로, 오프라인 이미지 벤치마크보다 폐루프 시험(Closed-Loop Experiment)이 더 의미 있는 평가를 제공한다.
+
+데이터 품질은 대조학습 성능에 큰 영향을 준다. 잘못된 이미지-텍스트 쌍은 의미 정렬을 약화시키는 노이즈 지도 신호를 제공한다. 따라서 대규모 데이터 필터링, 중복 제거(Deduplication), 캡션 정제(Caption Refinement), 품질 추정(Quality Estimation)이 데이터셋 구축에서 중요한 역할을 한다.
+
+부정 예제 샘플링(Negative Sampling)도 매우 중요하다. 효과적인 대조학습을 위해서는 무작위로 전혀 관련 없는 쌍뿐 아니라 정보성이 높은 부정 예제(Informative Negative Example)가 필요하다. 어려운 부정 예제(Hard Negative)는 시각적으로 유사하지만 의미가 다른 개념을 구분하도록 하여 임베딩의 판별 능력을 향상시킨다.
+
+배치 크기도 대조학습 성능에 영향을 준다. 각 배치가 부정 예제를 제공하기 때문에, 일반적으로 배치가 클수록 더 다양한 부정 비교를 경험하게 되어 표현 품질이 향상된다. 이에 따라 분산학습(Distributed Training)은 CLIP 규모의 학습에서 중요한 엔지니어링 요소가 되었다.
+
+온도 스케일링(Temperature Scaling)은 대조학습 중 유사도 분포의 날카로움을 조절한다. 적절한 온도 값은 양성 쌍과 음성 쌍 사이의 분리를 균형 있게 만든다. 잘못된 온도 설정은 학습을 불안정하게 하거나 임베딩 품질을 저하시킬 수 있다.
+
+해석 가능성(Interpretability)은 여전히 활발한 연구 분야이다. 임베딩 유사도는 의미적 대응을 제공하지만, 어떤 시각 증거가 정렬에 기여했는지를 정확히 이해하기는 어렵다. 어텐션 시각화, 중요도 분석(Saliency Analysis), 임베딩 프로빙(Embedding Probing), 특징 기여도 분석(Feature Attribution)은 학습된 표현을 이해하는 데 도움을 주지만 모델의 전체 추론 과정을 완전히 설명하지는 못한다.
+
+미래의 피지컬 AI 파운데이션 모델은 CLIP을 정적인 이미지-언어 정렬을 넘어 통합 멀티모달 월드 표현(Unified Multimodal World Representation)으로 확장할 가능성이 높다. 이미지, 비디오, 깊이 지도, LiDAR 관측, 로봇 상태, 촉각, 오디오, 행동, 지도, 언어가 모두 조정된 잠재 표현 안에서 연결될 수 있다. 미래 시스템은 분리된 모달리티 쌍만 학습하는 것이 아니라 체화된 상호작용 전체를 모델링하게 될 것이다.
+
+이러한 시스템에서도 대조학습은 중요한 학습 목표로 유지되겠지만, 복원(Reconstruction), 예측(Prediction), 모방학습(Imitation Learning), 강화학습(Reinforcement Learning), 월드 모델링(World Modeling), 생성형 학습 목표와 함께 사용될 것이다. 정렬은 더 큰 체화 학습 프레임워크의 한 구성요소가 될 것이다.
+
+궁극적으로 CLIP은 시각 관측과 언어 설명을 대규모로 정렬하면 의미 이해 능력이 자연스럽게 나타날 수 있음을 보여주었다. CLIP의 성공은 컴퓨터 비전을 폐쇄형 범주 인식(Closed-Set Recognition)에서 개방형 세계 의미 이해(Open-World Semantic Understanding)로 전환시켰으며, 대조적 멀티모달 학습(Contrastive Multimodal Learning)을 파운데이션 모델의 핵심 패러다임으로 확립하였다.
+
+피지컬 AI에서 CLIP은 인식과 언어를 연결하는 의미적 다리(Semantic Bridge)를 제공한다. 추가적인 기하 추론, 시간 모델링, 물리적 상호작용 메커니즘이 필요하지만, CLIP은 로봇이 고정된 라벨이 아니라 언어를 통해 시각 개념을 학습할 수 있다는 원리를 확립하였다. 이러한 아이디어는 현대의 거의 모든 비전-언어 파운데이션 모델에 지속적으로 영향을 주고 있으며, 미래 체화 지능 시스템을 구축하기 위한 핵심 이론적 토대 가운데 하나를 형성한다.
+
+##  
+
+## 3.3 Flamingo and LLaVA Vision Language Models [w/Code]
+
+![](images/image3.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+Flamingo and LLaVA represent two influential approaches to building vision-language models that combine visual perception with the reasoning and generation capabilities of large language models. Both systems demonstrate that a pretrained language model can be extended to interpret images without discarding the knowledge already learned from large-scale text data. Their architectures, training strategies, and degrees of openness differ, but together they helped establish the modern vision-language model as a central component of multimodal artificial intelligence and an important foundation for Physical AI.
+
+Traditional visual models classify, detect, or segment objects, while language models interpret and generate text. These systems were historically developed as separate components. A robot might use one model to detect a valve, another to recognize its state, and a rule-based system to connect that information to a written instruction. Vision-language models attempt to integrate these capabilities so that visual observations can be interpreted directly through natural language and combined with broad semantic knowledge.
+
+The central challenge is that visual and language representations have different structures. An image encoder produces spatial features or patch tokens, while a language model processes a sequence of text tokens. Simply concatenating the two does not guarantee that the language model will understand which visual features correspond to objects, attributes, relationships, or events. An architectural bridge is needed to transform and inject visual information into the language model.
+
+Flamingo was designed as a few-shot vision-language model capable of processing interleaved sequences of images, videos, and text. Instead of training a complete multimodal model from the beginning, Flamingo connected a pretrained visual encoder to a pretrained language model while keeping most of their original parameters fixed. This approach preserved the broad visual and linguistic knowledge already contained in the component models and reduced the cost of multimodal training.
+
+The visual input in Flamingo is first processed by a pretrained vision encoder. Images or video frames are converted into a large collection of visual features. Since the number of visual tokens may be large and may vary across inputs, Flamingo uses a Perceiver Resampler to convert them into a fixed number of compact visual tokens.
+
+The Perceiver Resampler contains learned latent queries that attend to the visual features. These queries extract the information considered most useful for later language generation. The result is a compact representation with a consistent size, regardless of the original image resolution or number of video frames.
+
+This resampling mechanism is important for computational efficiency. Feeding every raw image patch directly into a large language model would create long sequences and high memory costs. The latent visual tokens provide an information bottleneck that compresses the scene while preserving important semantic content.
+
+Flamingo then introduces gated cross-attention layers into the frozen language model. At selected positions between language-model layers, text representations attend to the visual tokens. The language model can therefore retrieve image information when needed while continuing to process language through its original self-attention and feed-forward structure.
+
+The cross-attention is gated so that the newly added visual pathway initially contributes only a small amount. During multimodal training, the gates learn how strongly visual information should affect the language representation. This stabilizes optimization because the pretrained language model is not immediately disrupted by randomly initialized multimodal components.
+
+Flamingo can process multiple images and text segments in an interleaved context. A prompt may contain an image, a question, another image, an explanation, and additional examples. The model learns to associate each text segment with the relevant preceding visual information.
+
+This interleaved structure supports in-context learning. A user can provide several visual examples with answers and then ask the model to solve a new example without updating its weights. Flamingo demonstrated that the few-shot abilities of large language models could extend into the visual domain.
+
+For example, a prompt may show several images of animals with textual labels followed by an unlabeled image. The model can infer the expected response format and classify the new image. More complex prompts may provide examples of visual question answering, scene description, or temporal interpretation.
+
+Video processing is another important capability. Flamingo can encode several frames from a video and treat them as visual context. This allows the language model to answer questions about events, actions, and changes over time, although the degree of temporal understanding depends on the frame sampling and training data.
+
+The architecture preserves a clear separation between vision and language. The visual encoder extracts perceptual features, the Perceiver Resampler compresses them, and gated cross-attention inserts them into language reasoning. This modularity allows the pretrained components to remain largely unchanged.
+
+Flamingo also showed the value of training on large collections of interleaved multimodal data rather than only image-caption pairs. Conventional image-text datasets provide one image associated with one caption. Interleaved documents contain several images and paragraphs with more complex contextual relationships.
+
+Such data can teach a model to maintain references across multiple visual and textual elements. However, web-derived interleaved data is noisy. Images may not correspond exactly to nearby text, and documents may contain irrelevant or ambiguous relationships. Large-scale filtering and robust training objectives are therefore necessary.
+
+LLaVA, which stands for Large Language and Vision Assistant, follows a more accessible and instruction-oriented approach. It connects a pretrained vision encoder with a large language model and trains the combined system to follow multimodal instructions. LLaVA became particularly influential because it demonstrated that a relatively simple architecture and carefully generated instruction data could produce strong visual conversational abilities.
+
+In a typical LLaVA architecture, an image is processed by a pretrained CLIP vision encoder. The encoder generates visual patch features that contain semantic information aligned with language. A lightweight projection layer maps these visual features into the embedding dimension expected by the language model.
+
+The projected visual tokens are inserted into the language-model input sequence. The language model then processes image tokens and text tokens together. Unlike Flamingo, which introduces repeated gated cross-attention layers, early LLaVA implementations relied on a simpler visual projection interface and the language model's existing transformer structure.
+
+This simplicity made LLaVA easier to reproduce, fine-tune, and extend. Researchers could combine an available vision encoder with an open large language model and train the connecting projection layer using multimodal data.
+
+LLaVA training commonly occurs in two stages. The first stage aligns the visual features with the language model. Image-caption pairs teach the projection layer how to translate visual encoder outputs into representations that the language model can interpret.
+
+During this alignment stage, much of the vision encoder and language model may remain frozen. The model learns the basic correspondence between visual tokens and language concepts without changing all parameters.
+
+The second stage performs visual instruction tuning. The model is trained on conversations in which an image is accompanied by user questions or instructions and detailed assistant responses. These examples teach the model not only to describe images but also to answer questions, reason about scenes, explain relationships, and follow conversational requests.
+
+High-quality multimodal instruction data is difficult and expensive to create manually. LLaVA popularized the use of powerful language models to generate synthetic visual instruction data from image descriptions and structured information. The generated conversations may ask about objects, attributes, spatial relationships, causes, possible actions, or detailed scene interpretation.
+
+Synthetic instruction generation substantially reduces data-creation cost, but it introduces risks. If the teacher model receives incomplete visual information or inaccurate captions, it may generate questions and answers that are not grounded in the actual image. The student model can then learn hallucinated relationships.
+
+Data filtering, human review, grounding checks, and balanced task construction are therefore important. A large quantity of synthetic data does not automatically produce a reliable visual assistant.
+
+LLaVA is designed for visual conversation. A user can upload an image and ask several follow-up questions. The model retains the image context while interpreting later dialogue. This supports interactive analysis rather than one-time classification.
+
+The model may describe a scene, identify objects, compare regions, explain possible events, or interpret diagrams and documents. These abilities make it useful as a general visual assistant and as a component in higher-level robot reasoning.
+
+Flamingo and LLaVA share the general principle of connecting a pretrained vision encoder with a pretrained language model. Both avoid training the complete system from random initialization. Both use an intermediate mechanism to transform visual features into a form that language processing can use.
+
+Their architectural emphasis differs. Flamingo uses a Perceiver Resampler and gated cross-attention inserted repeatedly into the language model. This design supports interleaved images, video, and few-shot multimodal prompting.
+
+LLaVA uses a simpler projection-based connection and emphasizes instruction tuning and visual dialogue. Its accessibility helped create a broad open research ecosystem and many later variants.
+
+Flamingo can be understood as an architecture focused on flexible multimodal context and in-context learning. LLaVA can be understood as an architecture focused on instruction following and conversational visual reasoning.
+
+Neither model directly understands the physical world in the complete robotic sense. They process visual appearance and language but do not automatically possess metric geometry, robot embodiment, force feedback, or executable action representations.
+
+For Physical AI, they provide a semantic reasoning layer rather than a complete control system. A robot can use a Flamingo-like or LLaVA-like model to interpret a scene, answer an operator's question, recognize task-relevant objects, or generate a high-level plan.
+
+Additional modules must convert the resulting semantic interpretation into physically grounded behavior. Depth estimation, object pose estimation, mapping, kinematics, trajectory planning, collision checking, control, and safety monitoring remain necessary.
+
+A robot instructed to "inspect the loose connector beside the red cable" may use a vision-language model to identify the likely target. A geometric perception system then estimates its three-dimensional pose. A planner determines whether the robot can reach it, and a controller executes the motion.
+
+The vision-language model helps determine what the instruction refers to, but validated robotics components determine how to act safely.
+
+Vision-language models are particularly useful for open-vocabulary perception. A robot may encounter objects that were not included in a fixed detector's training classes. Language-conditioned visual models can search for objects based on flexible descriptions.
+
+They can also connect observations with procedures and documentation. An inspection robot may observe a machine component and retrieve a relevant maintenance instruction. A mobile robot may interpret signs, labels, room names, or operator notes.
+
+Visual question answering supports remote supervision. An operator can ask whether an inspection image contains corrosion, whether a path is blocked, or which tool lies near a work area. The model can summarize the visual evidence in natural language.
+
+However, hallucination is a major limitation. Vision-language models may generate confident descriptions of objects or relationships that are not present in the image. This occurs because the language model is optimized to produce plausible text and may rely on prior knowledge when visual evidence is weak.
+
+Hallucination is especially dangerous in Physical AI. Incorrectly claiming that a path is clear, a valve is closed, or a person is absent can produce unsafe decisions. Model output must therefore be treated as a hypothesis requiring verification.
+
+Grounding mechanisms can reduce hallucination. Region-level visual features, object detectors, segmentation masks, depth information, and explicit coordinate references can connect language output more strongly to observed evidence.
+
+Models can also be required to provide bounding regions, object identifiers, or confidence estimates rather than only free-form text. The surrounding system can verify whether the referenced object actually exists and whether the geometric estimate is reliable.
+
+Another limitation is spatial precision. Vision-language models may understand general relations such as left, above, or near, but perform poorly on exact coordinates, counting, orientation, or fine geometric distinctions.
+
+Robotic action often requires millimeter-level accuracy, while language reasoning usually operates at a much coarser level. High-resolution geometric modules should therefore complement the vision-language model.
+
+Temporal reasoning also remains difficult. A few sampled video frames may omit critical motion or contact events. Long robot missions generate more temporal data than a standard vision-language context can retain.
+
+Video encoders, state space models, external memory, event summaries, and trajectory representations can extend the temporal capabilities of these systems.
+
+Embodiment information is another missing component. The same scene may imply different actions for a wheeled robot, humanoid, drone, or manipulator. A target may be visible but unreachable by the current robot.
+
+Physical AI systems can add robot-state tokens, morphology descriptions, action capabilities, tool information, and map context to the multimodal prompt. Cross-attention or specialized adapters can connect semantic understanding with embodiment.
+
+Fine-tuning on robot-specific data is often necessary. Internet images and general visual conversations differ from onboard camera views, industrial lighting, fisheye distortion, motion blur, depth sensors, and contact-rich manipulation scenes.
+
+Parameter-efficient methods such as low-rank adaptation, adapters, and prompt tuning allow a general vision-language model to specialize without retraining all parameters. Different adapters can support separate robots, environments, or inspection domains.
+
+The visual encoder may also require adaptation. CLIP features are semantically strong but may overlook fine defects, small fasteners, transparent objects, or subtle surface damage. Domain-specific perception models can provide additional high-resolution features.
+
+A practical architecture may combine global vision-language understanding with specialized detectors. The general model interprets the task and scene, while dedicated algorithms identify defects, estimate poses, or measure dimensions.
+
+Tool use greatly extends the usefulness of Flamingo- and LLaVA-style models. The model can call object detectors, optical character recognition, depth estimation, map services, digital twins, databases, or motion planners.
+
+Instead of generating unsupported answers, it can request precise information from validated tools. A question about a component's distance can trigger a depth calculation. A request to navigate can call a path planner.
+
+This converts the vision-language model into an orchestrator of specialized capabilities. Its strength lies in interpreting goals, selecting tools, integrating results, and communicating with humans.
+
+The model should not have unrestricted authority to call every tool. Safety-sensitive interfaces require permissions, argument validation, and deterministic constraints. An external text instruction found in an image should not be treated as an authorized robot command.
+
+Prompt injection through visual content is a real security concern. A sign, document, or screen in the environment may contain text intended to manipulate the model. The system must distinguish trusted operator instructions from untrusted environmental text.
+
+Evaluation of vision-language models for robotics should include more than conversational quality. Object grounding, spatial consistency, temporal understanding, hallucination rate, confidence calibration, robustness to image degradation, and resistance to misleading visual text are important.
+
+Task-level evaluation should measure whether the model identifies the correct object, selects the appropriate tool, provides a valid plan, and supports successful closed-loop execution.
+
+Ablation tests can remove visual evidence to determine whether the model relies on the image or merely on language priors. Counterfactual images can test whether the response changes when an object is moved, removed, or replaced.
+
+Closed-loop tests are essential because a robot's actions change the visual scene. A model may describe static images well but fail to maintain object identity after movement, occlusion, or viewpoint change.
+
+Memory systems can preserve grounded object identities and mission context across interactions. Instead of repeatedly interpreting the scene from scratch, the model can retrieve previous object records, poses, observations, and task outcomes.
+
+Flamingo's interleaved multimodal context and LLaVA's instruction-tuned conversational behavior represent complementary directions that continue to influence later systems. Modern multimodal models often combine compact visual resampling, cross-attention, unified token processing, instruction tuning, tool use, video understanding, and external memory.
+
+Their broader contribution was to demonstrate that large language models can become visual reasoning systems through carefully designed interfaces and multimodal training. They transformed vision from a separate classification subsystem into information that can participate directly in language-based reasoning.
+
+For Physical AI, this enables natural interaction between people and robots. Operators can specify goals in ordinary language, ask questions about observed conditions, request explanations, and receive reports based on visual evidence.
+
+The models can also support semantic planning by converting complex instructions into structured subgoals. Yet every subgoal must still be grounded in current geometry, robot state, and safety constraints.
+
+The long-term evolution of these architectures is likely to connect vision-language reasoning more directly with action, world modeling, tactile sensing, and continuous temporal memory. The result will move beyond models that merely discuss images toward systems that understand how visual scenes relate to physical possibilities and consequences.
+
+Flamingo and LLaVA therefore occupy an important position in the development of multimodal foundation models. Flamingo demonstrated efficient integration of visual context into a frozen language model through latent resampling and gated cross-attention. LLaVA demonstrated the effectiveness of simple visual projection combined with large-scale visual instruction tuning.
+
+Together, they established architectural and training principles that remain central to modern multimodal systems. For Physical AI, their greatest value lies in providing broad semantic understanding and natural-language interaction while serving as one layer within a larger embodied architecture.
+
+A reliable robot system will use such models to interpret, explain, and plan, but it will combine them with calibrated perception, explicit geometry, temporal state, deterministic control, and independent safety systems. Through this layered approach, vision-language intelligence can contribute to physically grounded and operationally trustworthy autonomous behavior.
+
+Flamingo와 LLaVA는 시각 인식(Visual Perception)과 대규모 언어 모델(Large Language Model)의 추론 및 생성 능력을 결합한 대표적인 비전-언어 모델(Vision-Language Model)이다. 두 시스템 모두 대규모 텍스트 데이터로부터 이미 학습된 지식을 유지하면서도, 사전학습된 언어 모델이 이미지를 이해하도록 확장할 수 있음을 보여주었다. 두 모델은 아키텍처, 학습 전략, 공개 수준에서는 차이가 있지만, 함께 현대적인 비전-언어 모델을 멀티모달 인공지능(Multimodal Artificial Intelligence)의 핵심 구성 요소이자 피지컬 AI의 중요한 기반 기술로 자리 잡게 만들었다.
+
+기존의 시각 모델은 객체를 분류(Classification), 검출(Detection), 분할(Segmentation)하는 데 집중하였고, 언어 모델은 텍스트를 이해하고 생성하는 역할을 수행하였다. 이들은 오랫동안 서로 독립적인 시스템으로 개발되었다. 예를 들어 로봇은 하나의 모델로 밸브를 검출하고, 다른 모델로 밸브의 상태를 인식하며, 규칙 기반 시스템이 이를 작업 지시와 연결하는 방식이었다. 비전-언어 모델은 이러한 기능을 하나의 시스템으로 통합하여 시각 관측을 자연어를 통해 직접 해석하고, 폭넓은 의미 지식과 결합할 수 있도록 한다.
+
+핵심적인 어려움은 시각 표현과 언어 표현이 서로 다른 구조를 가진다는 점이다. 이미지 인코더(Image Encoder)는 공간적 특징(Spatial Feature)이나 패치 토큰(Patch Token)을 생성하는 반면, 언어 모델은 텍스트 토큰(Text Token)의 순차 시퀀스를 처리한다. 단순히 두 표현을 이어 붙이는 것만으로는 언어 모델이 어떤 시각 특징이 객체, 속성, 관계, 사건에 대응하는지를 이해할 수 없다. 따라서 시각 정보를 언어 모델에 전달하기 위한 아키텍처적 연결 구조(Architectural Bridge)가 필요하다.
+
+Flamingo는 이미지, 비디오, 텍스트가 섞여 있는(Interleaved) 입력을 처리할 수 있는 소수 예제(Few-Shot) 비전-언어 모델로 설계되었다. 처음부터 완전한 멀티모달 모델을 학습하는 대신, Flamingo는 사전학습된 비전 인코더(Vision Encoder)와 사전학습된 언어 모델을 연결하고 대부분의 기존 파라미터는 그대로 유지하였다. 이러한 접근은 기존 모델이 이미 학습한 광범위한 시각 및 언어 지식을 보존하면서 멀티모달 학습 비용을 크게 줄였다.
+
+Flamingo에서 시각 입력은 먼저 사전학습된 비전 인코더를 통과한다. 이미지나 비디오 프레임은 많은 수의 시각 특징으로 변환된다. 입력마다 시각 토큰의 수가 크게 달라질 수 있기 때문에 Flamingo는 Perceiver Resampler를 이용하여 이를 일정한 개수의 압축된 시각 토큰으로 변환한다.
+
+Perceiver Resampler는 학습 가능한 잠재 질의(Learned Latent Query)를 사용하여 시각 특징에 어텐션(Attention)을 수행한다. 이 잠재 질의는 이후 언어 생성에 가장 중요한 정보를 선택적으로 추출한다. 그 결과 원래 이미지 해상도나 비디오 프레임 수와 관계없이 항상 일정한 크기의 압축된 시각 표현을 생성할 수 있다.
+
+이러한 리샘플링(Resampling) 메커니즘은 계산 효율성을 크게 향상시킨다. 원본 이미지의 모든 패치를 그대로 대규모 언어 모델에 입력하면 시퀀스 길이가 매우 길어지고 메모리 사용량도 급격히 증가한다. 잠재 시각 토큰은 중요한 의미 정보를 유지하면서 장면을 압축하는 정보 병목(Information Bottleneck)의 역할을 수행한다.
+
+Flamingo는 이후 동결(Frozen)된 언어 모델 내부에 게이트형 교차 어텐션 계층(Gated Cross-Attention Layer)을 추가한다. 언어 모델의 특정 계층 사이에서 텍스트 표현이 시각 토큰에 어텐션을 수행한다. 따라서 언어 모델은 기존의 자기 어텐션(Self-Attention)과 피드포워드 네트워크(Feed-Forward Network)를 그대로 유지하면서 필요할 때마다 시각 정보를 참조할 수 있다.
+
+교차 어텐션에는 게이트(Gate)가 적용되어 초기에는 새롭게 추가된 시각 정보가 매우 작은 비중만 갖도록 설계된다. 이후 멀티모달 학습 과정에서 게이트는 시각 정보가 언어 표현에 얼마나 큰 영향을 미칠지를 학습한다. 이러한 구조는 무작위로 초기화된 멀티모달 구성 요소 때문에 기존 언어 모델이 갑자기 불안정해지는 것을 방지하여 학습을 안정화한다.
+
+Flamingo는 여러 개의 이미지와 여러 개의 텍스트가 혼합된 문맥(Context)을 처리할 수 있다. 하나의 프롬프트에는 이미지, 질문, 또 다른 이미지, 설명, 추가 예제가 함께 포함될 수 있다. 모델은 각 텍스트 구간이 앞서 등장한 어떤 시각 정보와 관련되는지를 학습한다.
+
+이러한 혼합 구조는 문맥 내 학습(In-Context Learning)을 지원한다. 사용자는 여러 개의 시각 예제와 정답을 제시한 후 새로운 예제를 제시하면 모델은 가중치를 변경하지 않고도 새로운 문제를 해결할 수 있다. Flamingo는 대규모 언어 모델의 Few-Shot 능력이 시각 영역으로도 확장될 수 있음을 보여주었다.
+
+예를 들어 여러 동물 이미지와 그 이름을 먼저 보여준 뒤 마지막에 이름이 없는 동물 이미지를 제시하면 모델은 앞선 예제를 이용하여 새로운 이미지를 분류할 수 있다. 더 복잡한 프롬프트에서는 시각 질의응답(Visual Question Answering), 장면 설명(Scene Description), 시간적 해석(Temporal Interpretation)의 예제를 함께 제공할 수도 있다.
+
+비디오 처리(Video Processing) 역시 Flamingo의 중요한 능력이다. 여러 개의 비디오 프레임을 시각 문맥으로 인코딩하여 사건, 행동, 시간에 따른 변화에 대한 질문에 답할 수 있다. 다만 시간 이해 능력은 프레임 샘플링(Frame Sampling) 방식과 학습 데이터에 크게 의존한다.
+
+Flamingo의 아키텍처는 비전과 언어를 명확히 분리한다. 비전 인코더는 시각 특징을 추출하고, Perceiver Resampler는 이를 압축하며, 게이트형 교차 어텐션이 언어 추론 과정에 삽입된다. 이러한 모듈형 구조(Modular Architecture)는 사전학습된 구성 요소를 거의 변경하지 않고 활용할 수 있도록 한다.
+
+Flamingo는 단순한 이미지-캡션(Image-Caption) 쌍이 아니라 여러 이미지와 텍스트가 혼합된 대규모 멀티모달 데이터를 이용한 학습의 중요성도 보여주었다. 일반적인 이미지-텍스트 데이터셋은 하나의 이미지와 하나의 캡션으로 구성되지만, 혼합 문서(Interleaved Document)는 여러 이미지와 여러 문단 사이의 복잡한 문맥 관계를 포함한다.
+
+이러한 데이터는 여러 시각 요소와 텍스트 요소 사이의 참조 관계를 유지하는 방법을 모델에게 학습시킨다. 그러나 웹에서 수집한 혼합 데이터는 노이즈가 많다. 이미지와 인접한 텍스트가 정확히 대응하지 않을 수도 있고, 문서 안에 불필요하거나 모호한 관계가 포함될 수도 있다. 따라서 대규모 데이터 필터링과 강건한 학습 목표가 필요하다.
+
+LLaVA(Large Language and Vision Assistant)는 보다 접근성이 높고 지시 기반(Instruction-Oriented)의 접근 방식을 따른다. LLaVA는 사전학습된 비전 인코더와 대규모 언어 모델을 연결한 뒤, 멀티모달 지시를 수행하도록 학습한다. 비교적 단순한 아키텍처와 잘 생성된 지시 데이터만으로도 뛰어난 시각 대화 능력을 구현할 수 있음을 보여주면서 큰 영향을 미쳤다.
+
+일반적인 LLaVA 아키텍처에서는 먼저 이미지를 사전학습된 CLIP 비전 인코더가 처리한다. 인코더는 언어와 의미적으로 정렬된 시각 패치 특징을 생성한다. 이후 경량 투영 계층(Lightweight Projection Layer)이 이러한 시각 특징을 언어 모델이 사용하는 임베딩 차원으로 변환한다.
+
+변환된 시각 토큰은 언어 모델의 입력 시퀀스 안에 삽입된다. 이후 언어 모델은 시각 토큰과 텍스트 토큰을 함께 처리한다. Flamingo가 반복적인 게이트형 교차 어텐션 계층을 사용하는 것과 달리 초기 LLaVA는 단순한 시각 투영 인터페이스와 기존 트랜스포머 구조를 그대로 활용하였다.
+
+이러한 단순성은 LLaVA를 쉽게 재현하고, 미세조정(Fine-Tuning)하며, 확장할 수 있게 만들었다. 연구자들은 공개된 비전 인코더와 공개 대규모 언어 모델을 결합한 뒤 연결용 투영 계층만 멀티모달 데이터로 학습하면 되었다.
+
+LLaVA 학습은 일반적으로 두 단계로 이루어진다. 첫 번째 단계에서는 시각 특징과 언어 모델을 정렬한다. 이미지-캡션 데이터를 이용하여 투영 계층이 비전 인코더의 출력을 언어 모델이 이해할 수 있는 표현으로 변환하는 방법을 학습한다.
+
+이 정렬 단계에서는 비전 인코더와 언어 모델 대부분이 동결된 상태를 유지할 수 있다. 모델은 전체 파라미터를 수정하지 않고 시각 토큰과 언어 개념 사이의 기본 대응 관계를 학습한다.
+
+두 번째 단계는 시각 지시 튜닝(Visual Instruction Tuning)이다. 이미지와 함께 사용자 질문 또는 지시, 그리고 상세한 응답이 포함된 대화 데이터를 이용하여 학습한다. 이를 통해 모델은 단순한 이미지 설명을 넘어 질문에 답하고, 장면을 추론하며, 관계를 설명하고, 대화형 요청을 수행하는 능력을 학습한다.
+
+고품질의 멀티모달 지시 데이터는 직접 제작하기 어렵고 비용도 많이 든다. LLaVA는 강력한 언어 모델을 이용하여 이미지 설명과 구조화된 정보를 바탕으로 합성 시각 지시 데이터(Synthetic Visual Instruction Data)를 생성하는 방법을 널리 활용하였다. 생성된 대화는 객체, 속성, 공간 관계, 원인, 가능한 행동, 상세한 장면 해석 등에 대한 질문과 답변을 포함할 수 있다.
+
+합성 데이터 생성은 데이터 구축 비용을 크게 줄여주지만 위험도 존재한다. 교사 모델(Teacher Model)이 불완전한 시각 정보나 잘못된 캡션을 입력받으면 실제 이미지와 일치하지 않는 질문과 답변을 생성할 수 있다. 그러면 학생 모델(Student Model)은 환각(Hallucination)에 기반한 관계를 학습할 수 있다.
+
+따라서 데이터 필터링, 사람에 의한 검토, 접지 검증(Grounding Check), 균형 잡힌 작업 구성이 중요하다. 많은 양의 합성 데이터가 반드시 신뢰성 있는 시각 비서를 만드는 것은 아니다.
+
+LLaVA는 시각 대화(Visual Conversation)를 위해 설계되었다. 사용자는 이미지를 업로드한 후 여러 개의 후속 질문을 계속할 수 있다. 모델은 이후 대화에서도 이미지 문맥을 유지한다. 따라서 일회성 분류가 아니라 상호작용 기반의 분석을 지원한다.
+
+모델은 장면을 설명하고, 객체를 식별하며, 여러 영역을 비교하고, 사건을 설명하거나, 다이어그램과 문서를 해석할 수 있다. 이러한 능력은 범용 시각 비서뿐 아니라 상위 수준의 로봇 추론 시스템에서도 유용하다.
+
+Flamingo와 LLaVA는 모두 사전학습된 비전 인코더와 사전학습된 언어 모델을 연결한다는 공통 원리를 가진다. 둘 다 전체 시스템을 무작위 초기화(Random Initialization)부터 학습하지 않는다. 또한 시각 특징을 언어 처리에 사용할 수 있도록 변환하는 중간 연결 구조를 사용한다.
+
+그러나 아키텍처의 강조점은 다르다. Flamingo는 Perceiver Resampler와 반복적으로 삽입되는 게이트형 교차 어텐션을 사용한다. 이러한 설계는 이미지, 비디오, Few-Shot 멀티모달 프롬프트를 자연스럽게 처리할 수 있도록 한다.
+
+반면 LLaVA는 보다 단순한 투영 기반 연결 구조를 사용하며, 지시 튜닝과 시각 대화를 중심으로 발전하였다. 이러한 접근은 공개 연구 생태계(Open Research Ecosystem)를 크게 활성화하였고 수많은 후속 모델이 등장하는 계기가 되었다.
+
+Flamingo는 유연한 멀티모달 문맥 처리와 문맥 내 학습(In-Context Learning)에 초점을 맞춘 아키텍처라고 볼 수 있다. LLaVA는 지시 수행(Instruction Following)과 대화형 시각 추론(Conversational Visual Reasoning)에 초점을 맞춘 아키텍처라고 이해할 수 있다.
+
+그러나 두 모델 모두 완전한 의미의 로봇 물리 세계를 직접 이해하지는 못한다. 이들은 시각 정보와 언어를 처리하지만 거리 정보(Metric Geometry), 로봇 체화(Embodiment), 힘 피드백(Force Feedback), 실행 가능한 행동 표현(Action Representation)을 자동으로 갖고 있는 것은 아니다.
+
+피지컬 AI에서는 이러한 모델이 완전한 제어 시스템이 아니라 의미 추론 계층(Semantic Reasoning Layer)의 역할을 수행한다. 로봇은 Flamingo 또는 LLaVA와 유사한 모델을 이용하여 장면을 해석하고, 작업자의 질문에 답하며, 작업과 관련된 객체를 인식하거나, 상위 수준의 계획을 생성할 수 있다.
+
+그러나 생성된 의미 해석을 실제 물리 행동으로 변환하기 위해서는 추가적인 모듈이 필요하다. 깊이 추정(Depth Estimation), 객체 자세 추정(Object Pose Estimation), 지도 작성(Mapping), 운동학(Kinematics), 궤적 계획(Trajectory Planning), 충돌 검사(Collision Checking), 제어(Control), 안전 모니터링(Safety Monitoring)이 반드시 함께 사용되어야 한다.
+
+예를 들어 로봇이 "빨간 케이블 옆에 있는 느슨한 커넥터를 검사하라"는 명령을 받으면 비전-언어 모델은 목표 객체를 식별할 수 있다. 이후 기하 기반 인식 시스템이 해당 객체의 3차원 자세를 추정하고, 플래너(Planner)가 접근 가능 여부를 판단하며, 제어기가 실제 동작을 수행한다.
+
+비전-언어 모델은 명령이 무엇을 의미하는지를 이해하는 데 도움을 주지만, 실제 행동은 검증된 로보틱스 구성 요소가 안전하게 수행한다.
+
+비전-언어 모델은 개방 어휘 인식(Open-Vocabulary Perception)에 특히 유용하다. 로봇은 고정된 검출기(Object Detector)가 학습하지 않은 새로운 객체를 만날 수 있다. 언어 조건 기반(Language-Conditioned) 시각 모델은 유연한 자연어 설명을 이용하여 이러한 객체를 찾을 수 있다.
+
+또한 이러한 모델은 관측 결과를 절차와 문서에 연결할 수 있다. 검사 로봇은 기계 부품을 관찰한 후 관련 유지보수 문서를 검색할 수 있고, 이동 로봇은 표지판, 라벨, 방 이름, 작업자의 메모를 이해할 수 있다.
+
+시각 질의응답(Visual Question Answering)은 원격 감독(Remote Supervision)에도 유용하다. 작업자는 검사 이미지에 부식(Corrosion)이 있는지, 통로가 막혀 있는지, 작업 구역 근처에 어떤 공구가 있는지를 질문할 수 있으며, 모델은 시각 정보를 자연어로 요약하여 제공할 수 있다.
+
+그러나 환각(Hallucination)은 매우 중요한 한계이다. 비전-언어 모델은 이미지에 존재하지 않는 객체나 관계를 매우 확신에 찬 표현으로 생성할 수 있다. 이는 언어 모델이 그럴듯한 문장을 생성하도록 최적화되어 있으며, 시각 증거가 부족할 경우 기존 지식에 의존하기 때문이다.
+
+환각은 피지컬 AI에서 특히 위험하다. 통로가 비어 있다고 잘못 판단하거나, 밸브가 닫혀 있다고 잘못 설명하거나, 사람이 없다고 잘못 판단하면 위험한 의사결정이 이루어질 수 있다. 따라서 모델의 출력은 반드시 검증이 필요한 가설(Hypothesis)로 취급되어야 한다.
+
+접지 메커니즘(Grounding Mechanism)은 환각을 줄일 수 있다. 영역 단위 시각 특징(Region-Level Feature), 객체 검출기, 분할 마스크(Segmentation Mask), 깊이 정보, 명시적 좌표 참조를 이용하면 언어 출력이 실제 관측 증거와 더욱 강하게 연결될 수 있다.
+
+모델에게 자유로운 문장만 생성하도록 하기보다, 경계 상자(Bounding Box), 객체 식별자(Object Identifier), 신뢰도 추정(Confidence Estimate)을 함께 출력하도록 요구할 수도 있다. 이후 주변 시스템이 해당 객체가 실제 존재하는지, 기하학적 추정이 신뢰할 수 있는지를 검증할 수 있다.
+
+또 다른 한계는 공간 정밀도(Spatial Precision)이다. 비전-언어 모델은 왼쪽, 위쪽, 가까운 위치와 같은 일반적인 공간 관계는 이해할 수 있지만, 정확한 좌표, 개수, 방향, 미세한 기하학적 차이를 다루는 능력은 상대적으로 부족하다.
+
+반면 로봇 행동은 밀리미터 수준의 정밀도를 요구하는 경우가 많으며, 언어 추론은 훨씬 거친 수준에서 동작한다. 따라서 고해상도 기하 인식 모듈이 비전-언어 모델을 보완해야 한다.
+
+시간 추론(Temporal Reasoning)도 여전히 어려운 문제이다. 일부 비디오 프레임만 샘플링하면 중요한 움직임이나 접촉 사건을 놓칠 수 있다. 장시간 수행되는 로봇 임무는 일반적인 비전-언어 모델이 유지할 수 있는 문맥보다 훨씬 많은 시간 정보를 생성한다.
+
+비디오 인코더(Video Encoder), 상태공간 모델(State Space Model), 외부 메모리(External Memory), 이벤트 요약(Event Summary), 궤적 표현(Trajectory Representation)은 이러한 시간적 한계를 보완할 수 있다.
+
+체화 정보(Embodiment Information)도 부족한 요소이다. 동일한 장면이라도 바퀴형 로봇, 휴머노이드(Humanoid), 드론, 매니퓰레이터(Manipulator)는 서로 다른 행동을 수행해야 한다. 목표가 눈에 보이더라도 현재 로봇으로는 접근할 수 없을 수도 있다.
+
+피지컬 AI 시스템은 로봇 상태 토큰(Robot-State Token), 형태 정보(Morphology Description), 행동 가능 범위(Action Capability), 공구 정보(Tool Information), 지도 문맥(Map Context)을 멀티모달 프롬프트에 추가할 수 있다. 교차 어텐션이나 특화된 어댑터(Adapter)는 의미 이해와 체화 정보를 연결할 수 있다.
+
+로봇 특화 데이터에 대한 미세조정도 일반적으로 필요하다. 인터넷 이미지와 일반적인 시각 대화는 실제 로봇 카메라 영상, 산업 조명, 어안 왜곡(Fisheye Distortion), 움직임 블러(Motion Blur), 깊이 센서, 접촉 중심 조작 환경과 크게 다르다.
+
+저랭크 적응(Low-Rank Adaptation), 어댑터(Adapter), 프롬프트 튜닝(Prompt Tuning)과 같은 파라미터 효율적(Parameter-Efficient) 방법을 사용하면 모든 파라미터를 다시 학습하지 않고도 일반적인 비전-언어 모델을 특정 로봇 환경에 맞게 특화할 수 있다. 서로 다른 어댑터를 이용하면 다양한 로봇, 환경, 검사 도메인을 지원할 수 있다.
+
+비전 인코더도 추가적인 적응이 필요할 수 있다. CLIP 특징은 의미 이해에는 강하지만 미세 결함, 작은 체결 부품(Fastener), 투명 물체, 미세한 표면 손상을 놓칠 수 있다. 이러한 경우 도메인 특화 인식 모델이 고해상도 특징을 추가로 제공할 수 있다.
+
+실제 시스템에서는 전역적인 비전-언어 이해와 특화된 검출기를 함께 사용하는 것이 효과적이다. 범용 모델은 작업과 장면을 이해하고, 전용 알고리즘은 결함 검출, 자세 추정, 치수 측정을 담당한다.
+
+도구 사용(Tool Use)은 Flamingo 및 LLaVA 계열 모델의 활용성을 크게 확장한다. 모델은 객체 검출기(Object Detector), 광학 문자 인식(OCR), 깊이 추정기, 지도 서비스(Map Service), 디지털 트윈(Digital Twin), 데이터베이스(Database), 모션 플래너(Motion Planner)를 호출할 수 있다.
+
+근거 없는 답변을 생성하는 대신, 검증된 도구로부터 정확한 정보를 요청할 수 있다. 예를 들어 부품까지의 거리를 묻는 질문은 깊이 계산을 수행하고, 이동을 요청하는 질문은 경로 계획기(Path Planner)를 호출할 수 있다.
+
+이를 통해 비전-언어 모델은 여러 전문 기능을 조율하는 오케스트레이터(Orchestrator)의 역할을 수행하게 된다. 모델의 강점은 목표를 해석하고, 적절한 도구를 선택하며, 결과를 통합하고, 사람과 의사소통하는 데 있다.
+
+그러나 모델이 모든 도구를 자유롭게 호출하도록 허용해서는 안 된다. 안전과 관련된 인터페이스는 권한(Permission), 인수 검증(Argument Validation), 결정론적 제약(Deterministic Constraint)을 반드시 포함해야 한다. 이미지 안에서 발견된 임의의 텍스트를 정식 작업 명령으로 처리해서는 안 된다.
+
+시각 콘텐츠를 이용한 프롬프트 인젝션(Prompt Injection)은 실제 보안 문제이다. 환경 속의 표지판, 문서, 화면에는 모델을 조작하려는 텍스트가 포함될 수 있다. 시스템은 신뢰할 수 있는 작업자 명령과 신뢰할 수 없는 환경 텍스트를 구분해야 한다.
+
+로보틱스를 위한 비전-언어 모델 평가는 대화 품질만으로는 충분하지 않다. 객체 접지(Object Grounding), 공간 일관성(Spatial Consistency), 시간 이해, 환각 비율(Hallucination Rate), 신뢰도 보정(Confidence Calibration), 이미지 열화(Image Degradation)에 대한 강건성, 오해를 유발하는 시각 텍스트에 대한 저항성까지 함께 평가해야 한다.
+
+작업 수준(Task-Level)의 평가는 모델이 올바른 객체를 식별하는지, 적절한 도구를 선택하는지, 유효한 계획을 생성하는지, 실제 폐루프 실행을 성공적으로 지원하는지를 측정해야 한다.
+
+제거 실험(Ablation Test)은 시각 정보를 제거하여 모델이 실제 이미지를 사용하는지 아니면 단순히 언어 사전 지식(Language Prior)에 의존하는지를 확인할 수 있다. 반사실적 이미지(Counterfactual Image)는 객체를 이동하거나 제거하거나 교체했을 때 모델의 응답이 적절히 변화하는지를 시험할 수 있다.
+
+폐루프 시험(Closed-Loop Test)은 로봇의 행동이 이후 시각 장면을 변화시키기 때문에 필수적이다. 정적인 이미지는 잘 설명하더라도 객체가 움직이거나 가려지거나 시점(Viewpoint)이 바뀌었을 때 동일한 객체를 계속 추적하지 못할 수도 있다.
+
+메모리 시스템(Memory System)은 여러 상호작용에 걸쳐 접지된 객체 정보와 임무 문맥을 유지할 수 있다. 매번 장면을 처음부터 해석하는 대신 이전 객체 기록, 자세, 관측 결과, 작업 수행 결과를 검색하여 활용할 수 있다.
+
+Flamingo의 혼합 멀티모달 문맥 구조와 LLaVA의 지시 기반 대화 방식은 이후 모델에 지속적으로 영향을 주는 상호 보완적인 발전 방향을 제시하였다. 현대의 멀티모달 모델은 압축된 시각 리샘플링, 교차 어텐션, 통합 토큰 처리(Unified Token Processing), 지시 튜닝, 도구 사용, 비디오 이해, 외부 메모리를 함께 결합하는 방향으로 발전하고 있다.
+
+이들의 가장 큰 공헌은 적절한 인터페이스와 멀티모달 학습을 통해 대규모 언어 모델이 시각 추론 시스템으로 확장될 수 있음을 보여준 것이다. 이는 비전을 독립적인 분류 시스템이 아니라 언어 기반 추론에 직접 참여하는 정보로 변화시켰다.
+
+피지컬 AI에서는 이를 통해 사람과 로봇이 자연스럽게 상호작용할 수 있다. 작업자는 일상적인 언어로 목표를 설명하고, 관찰된 상황에 대해 질문하며, 설명을 요청하고, 시각적 근거에 기반한 보고서를 받을 수 있다.
+
+또한 이러한 모델은 복잡한 작업 지시를 구조화된 하위 목표(Subgoal)로 변환하여 의미 기반 계획(Semantic Planning)을 지원할 수 있다. 그러나 생성된 모든 하위 목표는 현재의 기하학적 정보, 로봇 상태, 안전 제약조건에 다시 접지되어야 한다.
+
+장기적으로 이러한 아키텍처는 비전-언어 추론을 행동(Action), 월드 모델(World Model), 촉각 센싱(Tactile Sensing), 연속적인 시간 메모리(Continuous Temporal Memory)와 더욱 직접적으로 연결하는 방향으로 발전할 것이다. 그 결과 단순히 이미지를 설명하는 모델을 넘어 시각 장면이 물리적으로 어떤 가능성과 결과를 의미하는지를 이해하는 시스템으로 발전하게 될 것이다.
+
+Flamingo와 LLaVA는 따라서 멀티모달 파운데이션 모델의 발전 과정에서 매우 중요한 위치를 차지한다. Flamingo는 잠재 리샘플링(Latent Resampling)과 게이트형 교차 어텐션을 통해 동결된 언어 모델에 시각 문맥을 효율적으로 통합하는 방법을 제시하였다. LLaVA는 단순한 시각 투영과 대규모 시각 지시 튜닝을 결합하는 접근이 매우 효과적임을 보여주었다.
+
+두 모델은 오늘날 멀티모달 시스템의 핵심이 되는 아키텍처 및 학습 원리를 확립하였다. 피지컬 AI에서 가장 큰 가치는 폭넓은 의미 이해와 자연어 상호작용을 제공하면서도, 더 큰 체화 아키텍처(Embodied Architecture)의 한 계층으로 동작한다는 점에 있다.
+
+신뢰할 수 있는 로봇 시스템은 이러한 모델을 이용하여 해석, 설명, 계획을 수행하지만, 동시에 보정된 인식(Calibrated Perception), 명시적 기하학(Explicit Geometry), 시간 상태(Temporal State), 결정론적 제어(Deterministic Control), 독립적인 안전 시스템을 함께 결합해야 한다. 이러한 계층적 접근을 통해 비전-언어 지능은 물리적으로 접지되고 실제 운용에서 신뢰할 수 있는 자율 행동에 기여할 수 있다.
+
+##  
+
+## 3.4 Point Cloud Language Grounding 3D LLM [w/Code]
+
+![](images/image4.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+Point cloud-language grounding is the process of connecting natural-language descriptions with objects, regions, relationships, and actions represented in three-dimensional space. It extends conventional vision-language grounding beyond two-dimensional images by allowing an artificial intelligence system to reason about depth, distance, orientation, volume, reachability, and spatial structure. For Physical AI, this capability is essential because robots do not operate only on flat images. They move through three-dimensional environments, manipulate objects with physical dimensions, avoid obstacles, inspect structures, and coordinate actions relative to their own bodies.
+
+A point cloud is a collection of three-dimensional points representing the surfaces of objects and environments. Each point usually contains x, y, and z coordinates and may also include color, intensity, surface normal, timestamp, or semantic features. Point clouds can be generated by LiDAR, depth cameras, stereo vision, structured-light sensors, or multi-view reconstruction. Unlike images, point clouds are generally sparse, irregular, and unordered. They therefore require specialized neural architectures that preserve geometric relationships without assuming a fixed pixel grid.
+
+Language provides a complementary form of information. A person can describe a target as "the red toolbox beside the left wheel," "the upper connector on the control panel," or "the empty space between the pallet and the wall." These expressions contain object identity, attributes, relative position, orientation, function, and task intent. Point cloud-language grounding attempts to identify which three-dimensional entity or region corresponds to such a description.
+
+This grounding problem is more difficult than simple object classification. A model must not only recognize a toolbox but also distinguish the correct toolbox among several candidates. It must interpret spatial expressions such as above, behind, nearest, inside, connected to, or reachable from. It may also need to understand the viewpoint from which left and right are defined.
+
+The reference frame is particularly important. "Left of the robot" differs from "left in the camera image" or "left from the operator's viewpoint." A reliable 3D grounding model must represent coordinate frames explicitly and determine which frame the instruction uses.
+
+Point cloud encoders form the perceptual foundation of 3D-language models. Early approaches such as PointNet processed individual points and aggregated them into a global representation using permutation-invariant operations. Later architectures introduced local neighborhoods, hierarchical sampling, graph structures, sparse convolutions, and transformer-based attention.
+
+Local geometric structure is essential because objects are defined by relationships among nearby points. Surface curvature, edges, corners, holes, and connected components cannot be understood by treating every point independently. Hierarchical encoders therefore group points into local regions and gradually build object-level and scene-level representations.
+
+Sparse voxel encoders convert point clouds into occupied cells within a three-dimensional grid. Sparse convolution processes only occupied regions, reducing computation compared with dense volumetric grids. This representation is effective for large scenes such as warehouses, factories, roads, and buildings.
+
+Point transformers apply attention directly to point features while incorporating relative three-dimensional position. Each point or local region attends to nearby geometric information. Relative coordinates, distance, and direction influence the attention weights, allowing the model to learn shape and spatial relationships.
+
+For language grounding, raw point-level features are often compressed into object tokens, region tokens, or scene tokens. Object proposals may be produced through 3D detection or segmentation. Each token can include semantic class, position, orientation, dimensions, appearance, confidence, and geometric features.
+
+Object-centric representations make language grounding more efficient. Instead of comparing a phrase with millions of points, the model compares it with a smaller set of candidate objects. However, this approach depends on the quality of object detection and may fail when the target is an unknown object, part of an object, free-space region, or surface feature.
+
+Dense grounding preserves more geometric detail. A phrase may correspond to a handle, weld, valve stem, shelf opening, or damaged surface rather than a complete object. Point-level or region-level grounding is therefore necessary for precise inspection and manipulation.
+
+Language is usually encoded by a transformer-based text encoder or large language model. The resulting text tokens represent object names, attributes, spatial relations, actions, and contextual constraints. Cross-attention can connect these language tokens with three-dimensional scene tokens.
+
+In one common design, language tokens query 3D object or region features. The word representing the target object may attend strongly to matching semantic features, while spatial-relation words attend to relative position and scene structure. The model produces a relevance score for each candidate region.
+
+The opposite direction is also useful. Three-dimensional object tokens can attend to the language instruction, allowing their features to become task aware. An object representation may emphasize color, function, or position depending on which properties appear in the instruction.
+
+Bidirectional cross-attention can progressively refine both modalities. Language becomes grounded in the observed scene, while scene representations become conditioned on the current task. This is valuable when the instruction is ambiguous or contains several relational clauses.
+
+For example, the instruction "select the small valve above the large pipe and nearest to the red panel" requires multiple reasoning steps. The model must identify valves, compare size, determine vertical relationships with pipes, measure distance to the panel, and select the unique candidate satisfying all constraints.
+
+Scene graphs provide a structured method for representing these relationships. Objects and regions become graph nodes, while edges represent relations such as above, below, connected to, inside, supporting, touching, or near. Language expressions can then be matched with graph structures.
+
+A graph representation is especially useful in industrial environments where components have clear functional and structural relationships. A machine may contain panels, motors, connectors, cables, pipes, valves, and inspection points. The model can ground language by reasoning over this hierarchy rather than relying only on visual similarity.
+
+Digital twins can provide additional prior knowledge. A digital twin may contain component identifiers, designed positions, dimensions, inspection procedures, and connectivity. Live point clouds can be aligned with the digital-twin geometry, and language can refer to either nominal or observed components.
+
+This combination enables commands such as "inspect connector J4 on the upper-right control board." The language refers to a named digital component, while the live point cloud provides its current physical pose. The system must align the stored model with current sensor data before acting.
+
+Alignment errors are a major concern. Incorrect calibration, localization drift, partial observation, or environmental changes can cause the live point cloud and digital twin to disagree. The model should preserve confidence and detect mismatch rather than forcing an incorrect correspondence.
+
+Three-dimensional large language models, often called 3D LLMs, extend language models so that they can process 3D scene representations. Instead of receiving only text or image tokens, the model receives point-cloud, object, voxel, mesh, or scene-graph tokens projected into the language-model embedding space.
+
+A simple architecture uses a pretrained 3D encoder followed by a projection layer that maps scene features into the embedding dimension of a large language model. The projected tokens are inserted into the language context, allowing the model to answer questions or generate descriptions about the scene.
+
+More advanced architectures use cross-attention between language tokens and 3D features. This avoids placing every point token directly into the language sequence and allows the model to selectively retrieve geometric information.
+
+Latent resampling can compress a large point cloud into a fixed number of scene tokens. Learned queries attend to the 3D features and produce compact representations of objects, regions, and global structure. This improves scalability for large environments.
+
+The training process often begins with alignment between 3D data and language. Point clouds may be paired with object labels, captions, room descriptions, question-answer pairs, or reconstructed scene annotations. Contrastive learning brings related 3D and text representations closer together.
+
+Instruction tuning then teaches the model to follow natural-language requests about three-dimensional scenes. Example tasks may include object identification, scene description, spatial question answering, counting, navigation reasoning, and target localization.
+
+High-quality 3D-language data is limited compared with image-text data. Collecting point clouds requires specialized sensors, calibration, reconstruction, and annotation. Descriptions must refer accurately to three-dimensional geometry rather than only visible appearance.
+
+Synthetic data and simulation can expand training coverage. Virtual environments provide exact object poses, segmentation, relationships, and camera parameters. Language descriptions and question-answer pairs can be generated automatically.
+
+However, simulated geometry may differ from real sensor data. Real point clouds include noise, missing surfaces, reflective materials, motion distortion, and occlusion. Models trained only in clean simulation may fail in physical environments.
+
+A strong training mixture should therefore combine simulation, scanned indoor scenes, outdoor LiDAR data, robot demonstrations, CAD models, and real-world interaction data. Domain randomization and sensor-noise simulation can improve transfer.
+
+Multi-view images can supplement point clouds with appearance information. Point clouds provide geometry, but color and texture may be sparse or unreliable. Image features can be projected into three-dimensional points or object regions.
+
+This creates a multimodal 3D representation combining shape, color, language, and robot state. A red handle and a gray handle may have identical geometry but different semantic relevance to the instruction. Image features help distinguish them.
+
+Depth cameras provide denser local geometry than long-range LiDAR but have limitations with transparent, reflective, dark, or distant surfaces. LiDAR provides robust range measurements but often lacks fine appearance. Combining sensors improves grounding reliability.
+
+Robot embodiment must also be integrated. A grounded object may be visible but unreachable. A free-space region may be geometrically open but too narrow for the robot. A manipulation target may require an orientation beyond the robot's joint limits.
+
+Embodiment-aware 3D grounding adds the robot pose, dimensions, kinematic structure, tool geometry, payload, and action capabilities to the model. Language grounding then becomes action conditioned rather than purely semantic.
+
+For navigation, the model may ground a destination in the point cloud or semantic map. The phrase "move to the open area beside the second shelf" becomes a three-dimensional goal region. A conventional planner can then compute a collision-free path.
+
+For manipulation, the model may ground a target object or part and estimate a task-relevant pose. A separate grasp planner determines contact points, approach direction, and collision constraints.
+
+For inspection, grounding may identify a surface, component, or region of interest. The robot must then select a viewpoint satisfying distance, angle, focus, lighting, and occlusion requirements.
+
+This illustrates the difference between semantic grounding and executable grounding. Semantic grounding answers what and where. Executable grounding additionally determines whether and how the robot can act.
+
+Affordance grounding extends the task further. An instruction may refer not only to an object but to a possible interaction, such as "the handle that can be pulled," "the surface that should be scanned," or "the opening through which the probe can be inserted."
+
+Affordances depend on geometry, material, articulation, and task context. A 3D model must identify functional regions rather than only object categories. Training data should include interactions, contact points, motion directions, and success outcomes.
+
+Temporal 3D grounding is required when scenes change. Objects may move, people may enter the workspace, and the robot itself changes viewpoint. A model must preserve object identity across point clouds and update their positions.
+
+Scene flow, tracking, temporal transformers, and state space models can link consecutive observations. Language references such as "the box moved earlier" or "return to the previous inspection point" require temporal memory.
+
+Long robot missions cannot store every point cloud inside the language-model context. Current geometry should remain in active memory, while older observations are compressed into object tracks, map updates, events, or mission records.
+
+A 3D LLM can retrieve these memories when needed. An operator may ask, "Where was the damaged container first detected?" The system must connect the language query with a stored object identity, time, and map location.
+
+Uncertainty is essential because point clouds are incomplete. Occluded surfaces are missing, distant points are sparse, and segmentation may be ambiguous. A model should distinguish observed geometry from inferred geometry.
+
+Confidence may be represented for object detection, pose, depth, alignment, and language grounding. If multiple candidate objects match the instruction, the system should ask for clarification or obtain another viewpoint.
+
+Active perception can reduce uncertainty. The robot may move its camera, rotate its base, or approach the target to collect additional point-cloud data. Grounding then becomes an interactive process rather than a single prediction.
+
+Hallucination remains a risk in 3D LLMs. A language model may generate a plausible description of an object that is not present or infer geometry unsupported by the point cloud. Free-form answers should therefore be linked to explicit scene tokens or object identifiers.
+
+A reliable system can require that every grounded reference include a 3D bounding box, segmentation mask, point set, pose estimate, or scene-graph node. This allows downstream components to verify the physical target.
+
+Spatial reasoning must also be tested carefully. Language models may perform well on common relational phrases but fail on exact distance, orientation, containment, or viewpoint-dependent left-right relations.
+
+Evaluation should separate semantic recognition from geometric accuracy. Metrics may include object-selection accuracy, 3D intersection over union, center-position error, orientation error, relation classification, and reference-frame correctness.
+
+Robot-specific evaluation should include reachability, navigation success, grasp success, viewpoint quality, collision avoidance, and closed-loop task completion. A model that identifies the correct object but provides an unusable target pose is not sufficient.
+
+Robustness tests should include sparse point clouds, sensor noise, missing views, reflective objects, calibration errors, moving objects, and unfamiliar environments. The model should reduce confidence when evidence is weak.
+
+Cross-domain evaluation is also important. A system trained on indoor room scans may not generalize to factories, outdoor sites, or cluttered maintenance spaces. The structure and scale of environments vary significantly.
+
+Open-vocabulary 3D grounding is one of the most promising applications. Instead of relying on a fixed set of 3D detector classes, the system can search for objects using arbitrary language descriptions.
+
+This allows a robot to find unusual tools, newly installed equipment, temporary obstacles, or site-specific components without retraining the complete detector. Text embeddings provide semantic flexibility, while 3D features provide physical location.
+
+Yet open vocabulary does not guarantee physical competence. The model may recognize a "ladder" but not determine whether it is stable or climbable. Physical attributes require additional sensing and learned interaction knowledge.
+
+Tool use can improve 3D LLM reliability. The language model can call a point-cloud segmenter, pose estimator, collision checker, digital-twin service, map server, or motion planner.
+
+Instead of estimating distance from language reasoning, it can request an exact geometric calculation. Instead of claiming that a target is reachable, it can call an inverse-kinematics solver.
+
+This positions the 3D LLM as an orchestrator of semantic and geometric tools. Its role is to interpret the request, identify relevant entities, choose appropriate services, and integrate the results.
+
+Authority boundaries remain essential. Environmental text, labels, or scanned documents should not automatically become executable commands. Trusted operator instructions must be separated from untrusted scene content.
+
+3D-language systems may also be vulnerable to incorrect map data or poisoned digital-twin information. Every external source should include provenance, version, and confidence.
+
+Efficient deployment is challenging because point clouds can contain millions of points. Downsampling, voxelization, object extraction, sparse attention, and latent resampling are required before language reasoning.
+
+The model should preserve small but important structures such as cables, fasteners, handles, cracks, or thin obstacles. Excessive compression may remove exactly the features needed for inspection or manipulation.
+
+Hierarchical processing is therefore practical. Coarse scene tokens support room-level understanding and navigation, object tokens support semantic grounding, and dense local features support precise action.
+
+A large language model does not need to process all dense geometry directly. It can reason over compact semantic tokens and request high-resolution geometric analysis for selected targets.
+
+This division reduces computation and improves interpretability. Engineers can identify which object or scene node the model selected before physical action begins.
+
+The long-term objective of point cloud-language grounding is to connect human concepts with executable three-dimensional reality. A robot should understand not only that an operator mentioned a valve, but which valve, where it is, how it is oriented, whether it is reachable, and what interaction is possible.
+
+Three-dimensional large language models provide a flexible semantic interface to complex spatial environments. They can interpret instructions, answer questions, connect live observations with maps and digital twins, and support high-level planning.
+
+Their strengths lie in language understanding, open-vocabulary semantics, relational reasoning, and tool orchestration. Their weaknesses include incomplete geometry, hallucination, limited precision, sensor dependence, and insufficient physical validation.
+
+For Physical AI, the most reliable architecture combines a 3D LLM with calibrated point-cloud perception, explicit coordinate transformations, object tracking, kinematic reasoning, motion planning, and deterministic safety systems.
+
+The 3D LLM identifies and explains the intended target. Geometric modules estimate its precise physical state. Planning systems determine feasible actions. Controllers execute the motion, while independent safety systems enforce limits.
+
+Within this layered architecture, point cloud-language grounding becomes the bridge between human spatial concepts and robot action. It transforms descriptions such as "the upper valve behind the pipe" into a verified three-dimensional entity that a robot can inspect, approach, or manipulate.
+
+As datasets, sensors, scene representations, and multimodal architectures improve, 3D LLMs will move from describing static scans toward maintaining persistent, interactive, and action-aware models of the physical world. This development will form a central foundation for robots that can understand natural language directly in the geometry of their operating environments.
+
+포인트 클라우드-언어 접지(Point Cloud-Language Grounding)는 자연어 설명을 3차원 공간에 표현된 객체, 영역, 관계, 행동과 연결하는 과정이다. 이는 기존의 비전-언어 접지(Vision-Language Grounding)를 2차원 이미지 너머로 확장하여 인공지능 시스템이 깊이, 거리, 방향, 부피, 도달 가능성, 공간 구조를 추론할 수 있도록 한다. 피지컬 AI(Physical AI)에서 이러한 능력은 필수적이다. 로봇은 평면 이미지에서만 동작하는 것이 아니라 3차원 환경을 이동하고, 실제 크기를 가진 물체를 조작하며, 장애물을 회피하고, 구조물을 검사하고, 자신의 몸체를 기준으로 행동을 조정하기 때문이다.
+
+포인트 클라우드(Point Cloud)는 객체와 환경의 표면을 표현하는 3차원 점들의 집합이다. 각 점은 일반적으로 x, y, z 좌표를 포함하며, 색상, 반사 강도(Intensity), 표면 법선(Surface Normal), 타임스탬프(Timestamp), 의미 특징(Semantic Feature)을 추가로 포함할 수 있다. 포인트 클라우드는 LiDAR, 깊이 카메라(Depth Camera), 스테레오 비전(Stereo Vision), 구조광 센서(Structured-Light Sensor), 다중 시점 재구성(Multi-View Reconstruction)을 통해 생성할 수 있다. 이미지와 달리 포인트 클라우드는 일반적으로 희소하고, 불규칙하며, 순서가 없다. 따라서 고정된 픽셀 격자를 가정하지 않으면서 기하 관계를 보존하는 특화된 신경망 아키텍처가 필요하다.
+
+언어는 이와 상호 보완적인 정보를 제공한다. 사람은 목표를 "왼쪽 바퀴 옆의 빨간 공구 상자", "제어 패널 위쪽의 커넥터", "팔레트와 벽 사이의 빈 공간"과 같이 설명할 수 있다. 이러한 표현에는 객체 정체성(Object Identity), 속성(Attribute), 상대 위치(Relative Position), 방향(Orientation), 기능(Function), 작업 의도(Task Intent)가 포함된다. 포인트 클라우드-언어 접지는 이러한 설명이 어떤 3차원 객체나 영역에 대응하는지를 식별하려고 한다.
+
+이러한 접지 문제는 단순한 객체 분류보다 더 어렵다. 모델은 공구 상자를 인식하는 것뿐 아니라 여러 후보 가운데 정확한 공구 상자를 구분해야 한다. 또한 위쪽, 뒤쪽, 가장 가까운, 내부, 연결된, 도달 가능한과 같은 공간 표현을 이해해야 한다. 경우에 따라 왼쪽과 오른쪽이 어느 시점(Viewpoint)을 기준으로 정의되는지도 판단해야 한다.
+
+기준 좌표계(Reference Frame)는 특히 중요하다. "로봇의 왼쪽"은 "카메라 영상의 왼쪽"이나 "작업자의 시점에서 왼쪽"과 다르다. 신뢰할 수 있는 3차원 접지 모델은 좌표계를 명시적으로 표현하고, 명령이 어떤 좌표계를 사용하는지 판단해야 한다.
+
+포인트 클라우드 인코더(Point Cloud Encoder)는 3차원-언어 모델(3D-Language Model)의 지각 기반을 형성한다. PointNet과 같은 초기 접근법은 개별 점을 처리한 뒤 순열 불변 연산(Permutation-Invariant Operation)을 이용하여 전역 표현으로 통합하였다. 이후의 아키텍처는 지역 이웃(Local Neighborhood), 계층적 샘플링(Hierarchical Sampling), 그래프 구조(Graph Structure), 희소 합성곱(Sparse Convolution), 트랜스포머 기반 어텐션(Transformer-Based Attention)을 도입하였다.
+
+지역 기하 구조(Local Geometric Structure)는 객체가 인접한 점 사이의 관계로 정의되기 때문에 필수적이다. 표면 곡률(Surface Curvature), 모서리(Edge), 꼭짓점(Corner), 구멍(Hole), 연결 요소(Connected Component)는 각 점을 독립적으로 처리하는 방식만으로는 이해하기 어렵다. 따라서 계층형 인코더(Hierarchical Encoder)는 점을 지역 영역으로 그룹화하고, 점차 객체 수준 및 장면 수준 표현을 구축한다.
+
+희소 복셀 인코더(Sparse Voxel Encoder)는 포인트 클라우드를 3차원 격자 내부의 점유 셀(Occupied Cell)로 변환한다. 희소 합성곱은 점유된 영역만 처리하므로 밀집 체적 격자(Dense Volumetric Grid)보다 계산량을 줄일 수 있다. 이러한 표현은 창고, 공장, 도로, 건물과 같은 대규모 장면에 효과적이다.
+
+포인트 트랜스포머(Point Transformer)는 상대적인 3차원 위치를 반영하면서 점 특징에 직접 어텐션을 적용한다. 각 점이나 지역 영역은 인접한 기하 정보에 주의를 기울인다. 상대 좌표, 거리, 방향이 어텐션 가중치에 영향을 주어 모델이 형상과 공간 관계를 학습하도록 한다.
+
+언어 접지를 위해 원시 점 수준 특징은 일반적으로 객체 토큰(Object Token), 영역 토큰(Region Token), 장면 토큰(Scene Token)으로 압축된다. 객체 후보(Object Proposal)는 3차원 검출(3D Detection)이나 분할(Segmentation)을 통해 생성할 수 있다. 각 토큰은 의미 클래스, 위치, 방향, 크기, 외형, 신뢰도, 기하 특징을 포함할 수 있다.
+
+객체 중심 표현(Object-Centric Representation)은 언어 접지를 더욱 효율적으로 만든다. 하나의 문구를 수백만 개의 점과 비교하는 대신 소수의 후보 객체와 비교할 수 있다. 그러나 이 방식은 객체 검출 품질에 의존하며, 목표가 미지의 객체, 객체의 일부, 자유 공간(Free-Space Region), 표면 특징일 경우 실패할 수 있다.
+
+밀집 접지(Dense Grounding)는 더 세밀한 기하 정보를 보존한다. 문구가 전체 객체가 아니라 손잡이, 용접부, 밸브 축, 선반 개구부, 손상 표면을 지칭할 수 있다. 따라서 정밀 검사와 조작에는 점 수준 또는 영역 수준 접지가 필요하다.
+
+언어는 일반적으로 트랜스포머 기반 텍스트 인코더(Text Encoder)나 대규모 언어 모델로 인코딩된다. 생성된 텍스트 토큰은 객체 이름, 속성, 공간 관계, 행동, 문맥 제약을 표현한다. 교차 어텐션(Cross-Attention)은 이러한 언어 토큰을 3차원 장면 토큰과 연결할 수 있다.
+
+일반적인 설계에서는 언어 토큰이 3차원 객체 또는 영역 특징에 질의한다. 목표 객체를 나타내는 단어는 일치하는 의미 특징에 강하게 주의를 기울이고, 공간 관계를 나타내는 단어는 상대 위치와 장면 구조에 주의를 기울일 수 있다. 모델은 각 후보 영역에 대한 관련성 점수를 생성한다.
+
+반대 방향도 유용하다. 3차원 객체 토큰이 언어 명령에 주의를 기울이면 객체 특징이 작업 인식적(Task-Aware)이 될 수 있다. 하나의 객체 표현은 명령에 어떤 속성이 포함되었는지에 따라 색상, 기능, 위치를 더 강조할 수 있다.
+
+양방향 교차 어텐션(Bidirectional Cross-Attention)은 두 모달리티를 점진적으로 정제할 수 있다. 언어는 관측된 장면에 접지되고, 장면 표현은 현재 작업에 맞게 조건화된다. 이는 명령이 모호하거나 여러 관계절을 포함하는 경우 특히 유용하다.
+
+예를 들어 "큰 파이프 위에 있고 빨간 패널과 가장 가까운 작은 밸브를 선택하라"는 명령은 여러 단계의 추론을 요구한다. 모델은 밸브를 식별하고, 크기를 비교하며, 파이프와의 수직 관계를 판단하고, 패널까지의 거리를 계산한 뒤, 모든 조건을 충족하는 유일한 후보를 선택해야 한다.
+
+장면 그래프(Scene Graph)는 이러한 관계를 구조적으로 표현하는 방법이다. 객체와 영역은 그래프 노드(Graph Node)가 되고, 엣지(Edge)는 위쪽, 아래쪽, 연결됨, 내부, 지지함, 접촉함, 가까움과 같은 관계를 표현한다. 이후 언어 표현을 그래프 구조와 대응시킬 수 있다.
+
+그래프 표현은 부품 사이의 기능적·구조적 관계가 명확한 산업 환경에서 특히 유용하다. 하나의 기계는 패널, 모터, 커넥터, 케이블, 파이프, 밸브, 검사 지점을 포함할 수 있다. 모델은 단순한 시각적 유사도에만 의존하지 않고 이러한 계층 구조에서 추론하여 언어를 접지할 수 있다.
+
+디지털 트윈(Digital Twin)은 추가적인 사전 지식을 제공할 수 있다. 디지털 트윈에는 부품 식별자(Component Identifier), 설계 위치, 크기, 검사 절차, 연결 관계가 포함될 수 있다. 실시간 포인트 클라우드를 디지털 트윈 기하 구조와 정렬하고, 언어는 기준 부품 또는 실제 관측 부품을 지칭할 수 있다.
+
+이를 통해 "오른쪽 위 제어 보드의 커넥터 J4를 검사하라"와 같은 명령을 처리할 수 있다. 언어는 이름이 지정된 디지털 부품을 참조하고, 실시간 포인트 클라우드는 현재의 물리 자세를 제공한다. 시스템은 행동하기 전에 저장된 모델과 현재 센서 데이터를 정렬해야 한다.
+
+정렬 오류(Alignment Error)는 중요한 위험 요소이다. 잘못된 보정, 위치 추정 드리프트(Localization Drift), 부분 관측, 환경 변화로 인해 실시간 포인트 클라우드와 디지털 트윈이 불일치할 수 있다. 모델은 잘못된 대응 관계를 강제로 만들기보다 신뢰도를 유지하고 불일치를 감지해야 한다.
+
+3차원 대규모 언어 모델(3D Large Language Model, 3D LLM)은 언어 모델이 3차원 장면 표현을 처리하도록 확장한다. 텍스트나 이미지 토큰뿐 아니라 포인트 클라우드, 객체, 복셀, 메시(Mesh), 장면 그래프 토큰을 언어 모델의 임베딩 공간으로 투영하여 입력한다.
+
+단순한 아키텍처는 사전학습된 3차원 인코더와 투영 계층(Projection Layer)을 사용하여 장면 특징을 대규모 언어 모델이 사용하는 임베딩 차원으로 변환한다. 투영된 토큰은 언어 문맥에 삽입되며, 모델은 장면에 관한 질문에 답하거나 설명을 생성할 수 있다.
+
+더 발전된 아키텍처는 언어 토큰과 3차원 특징 사이에 교차 어텐션을 사용한다. 이를 통해 모든 점 토큰을 언어 시퀀스에 직접 넣지 않고도 필요한 기하 정보만 선택적으로 검색할 수 있다.
+
+잠재 리샘플링(Latent Resampling)은 대규모 포인트 클라우드를 고정된 수의 장면 토큰으로 압축할 수 있다. 학습 가능한 쿼리(Learned Query)가 3차원 특징에 주의를 기울여 객체, 영역, 전역 구조를 나타내는 압축 표현을 생성한다. 이는 대규모 환경에서 확장성을 향상시킨다.
+
+학습 과정은 일반적으로 3차원 데이터와 언어 사이의 정렬에서 시작된다. 포인트 클라우드는 객체 라벨, 캡션(Caption), 방 설명, 질의응답 쌍, 재구성 장면 주석과 연결될 수 있다. 대조학습(Contrastive Learning)은 관련된 3차원 표현과 텍스트 표현을 잠재 공간에서 더 가깝게 만든다.
+
+이후 지시 튜닝(Instruction Tuning)을 통해 모델이 3차원 장면에 대한 자연어 요청을 수행하도록 학습한다. 예시 작업에는 객체 식별, 장면 설명, 공간 질의응답, 개수 세기, 내비게이션 추론, 목표 위치 결정이 포함될 수 있다.
+
+고품질 3차원-언어 데이터는 이미지-텍스트 데이터보다 훨씬 부족하다. 포인트 클라우드를 수집하려면 특수 센서, 보정, 재구성, 주석 작업이 필요하다. 언어 설명도 단순한 외형이 아니라 3차원 기하 구조를 정확히 지칭해야 한다.
+
+합성 데이터(Synthetic Data)와 시뮬레이션(Simulation)은 학습 범위를 확장할 수 있다. 가상 환경은 정확한 객체 자세, 분할 정보, 관계, 카메라 파라미터를 제공한다. 언어 설명과 질의응답도 자동으로 생성할 수 있다.
+
+그러나 시뮬레이션 기하 구조는 실제 센서 데이터와 다를 수 있다. 실제 포인트 클라우드는 노이즈, 누락 표면, 반사 재질, 움직임 왜곡(Motion Distortion), 가림(Occlusion)을 포함한다. 깨끗한 시뮬레이션 데이터만으로 학습한 모델은 실제 환경에서 실패할 수 있다.
+
+따라서 강력한 학습 데이터 혼합은 시뮬레이션, 스캔된 실내 장면, 야외 LiDAR 데이터, 로봇 시연(Robot Demonstration), CAD 모델, 실제 상호작용 데이터를 함께 포함해야 한다. 도메인 랜덤화(Domain Randomization)와 센서 노이즈 시뮬레이션은 현실 전이(Sim-to-Real Transfer)를 향상시킬 수 있다.
+
+다중 시점 이미지(Multi-View Image)는 포인트 클라우드에 외형 정보를 보완할 수 있다. 포인트 클라우드는 기하를 제공하지만 색상과 질감 정보는 희소하거나 불안정할 수 있다. 이미지 특징을 3차원 점이나 객체 영역으로 투영할 수 있다.
+
+이를 통해 형상, 색상, 언어, 로봇 상태를 결합한 멀티모달 3차원 표현을 만들 수 있다. 빨간 손잡이와 회색 손잡이는 기하학적으로 동일할 수 있지만, 언어 명령에서는 서로 다른 의미를 가진다. 이미지 특징은 이들을 구분하는 데 도움을 준다.
+
+깊이 카메라는 장거리 LiDAR보다 밀집된 지역 기하 정보를 제공하지만 투명하거나, 반사성이 높거나, 어둡거나, 먼 표면에서 한계가 있다. LiDAR는 안정적인 거리 정보를 제공하지만 세밀한 외형 정보가 부족한 경우가 많다. 여러 센서를 결합하면 접지 신뢰성을 높일 수 있다.
+
+로봇 체화(Embodiment)도 통합되어야 한다. 접지된 객체가 보이더라도 도달할 수 없을 수 있다. 자유 공간이 기하학적으로 열려 있더라도 로봇이 통과하기에는 너무 좁을 수 있다. 조작 목표가 로봇 관절 한계를 벗어난 방향을 요구할 수도 있다.
+
+체화 인식 3차원 접지(Embodiment-Aware 3D Grounding)는 로봇 자세, 크기, 운동학 구조(Kinematic Structure), 공구 형상, 적재물, 행동 능력을 모델에 추가한다. 이때 언어 접지는 순수한 의미 추론이 아니라 행동 조건부(Action-Conditioned) 접지가 된다.
+
+내비게이션에서는 모델이 포인트 클라우드나 의미 지도에 목적지를 접지할 수 있다. "두 번째 선반 옆의 열린 공간으로 이동하라"는 표현은 3차원 목표 영역으로 변환된다. 이후 기존의 경로 계획기(Planner)가 충돌 없는 경로를 계산할 수 있다.
+
+조작에서는 모델이 목표 객체나 부품을 접지하고 작업 관련 자세를 추정할 수 있다. 별도의 파지 계획기(Grasp Planner)가 접촉 지점, 접근 방향, 충돌 제약을 결정한다.
+
+검사에서는 접지를 통해 표면, 부품, 관심 영역(Region of Interest)을 식별할 수 있다. 이후 로봇은 거리, 각도, 초점, 조명, 가림 조건을 만족하는 관측 시점을 선택해야 한다.
+
+이는 의미 접지(Semantic Grounding)와 실행 가능한 접지(Executable Grounding)의 차이를 보여준다. 의미 접지는 무엇이고 어디에 있는지를 알려준다. 실행 가능한 접지는 로봇이 행동할 수 있는지와 어떻게 행동해야 하는지를 추가로 결정한다.
+
+어포던스 접지(Affordance Grounding)는 문제를 더 확장한다. 명령은 객체 자체뿐 아니라 "당길 수 있는 손잡이", "스캔해야 하는 표면", "프로브를 삽입할 수 있는 개구부"와 같이 가능한 상호작용을 지칭할 수 있다.
+
+어포던스는 기하, 재질, 관절 구조, 작업 문맥에 따라 달라진다. 3차원 모델은 객체 클래스뿐 아니라 기능 영역(Functional Region)을 식별해야 한다. 학습 데이터에는 상호작용, 접촉 지점, 움직임 방향, 성공 결과가 포함되어야 한다.
+
+장면이 변하는 경우 시간적 3차원 접지(Temporal 3D Grounding)가 필요하다. 객체가 이동하고, 사람이 작업 공간에 들어오며, 로봇의 시점도 변한다. 모델은 여러 포인트 클라우드에 걸쳐 객체 정체성을 유지하고 위치를 갱신해야 한다.
+
+장면 흐름(Scene Flow), 추적(Tracking), 시간 트랜스포머(Temporal Transformer), 상태공간 모델(State Space Model)은 연속 관측을 연결할 수 있다. "이전에 움직였던 상자" 또는 "이전 검사 지점으로 돌아가라"와 같은 표현은 시간 메모리를 요구한다.
+
+장시간 로봇 임무에서는 모든 포인트 클라우드를 언어 모델 컨텍스트에 저장할 수 없다. 현재 기하 정보는 활성 메모리에 유지하고, 과거 관측은 객체 추적 기록(Object Track), 지도 갱신, 이벤트, 임무 기록으로 압축해야 한다.
+
+3D LLM은 필요할 때 이러한 메모리를 검색할 수 있다. 작업자가 "손상된 용기를 처음 발견한 위치가 어디인가?"라고 질문하면 시스템은 언어 질의를 저장된 객체 ID, 시간, 지도 위치와 연결해야 한다.
+
+포인트 클라우드는 불완전하기 때문에 불확실성(Uncertainty)이 필수적이다. 가려진 표면은 관측되지 않고, 먼 점은 희소하며, 분할 결과는 모호할 수 있다. 모델은 실제로 관측된 기하와 추론된 기하를 구분해야 한다.
+
+신뢰도는 객체 검출, 자세, 깊이, 정렬, 언어 접지 각각에 대해 표현할 수 있다. 여러 후보 객체가 명령과 일치한다면 시스템은 추가 설명을 요청하거나 다른 관측 시점을 확보해야 한다.
+
+능동적 인식(Active Perception)은 불확실성을 줄일 수 있다. 로봇은 카메라를 움직이거나, 베이스를 회전하거나, 목표에 접근하여 추가 포인트 클라우드 데이터를 수집할 수 있다. 이때 접지는 한 번의 예측이 아니라 상호작용적 과정이 된다.
+
+환각(Hallucination)은 3D LLM에서도 위험하다. 언어 모델은 실제로 존재하지 않는 객체를 그럴듯하게 설명하거나, 포인트 클라우드가 뒷받침하지 않는 기하 정보를 추론할 수 있다. 따라서 자유 형식 응답은 명시적인 장면 토큰이나 객체 식별자에 연결되어야 한다.
+
+신뢰할 수 있는 시스템은 모든 접지 결과에 3차원 경계 상자(3D Bounding Box), 분할 마스크(Segmentation Mask), 점 집합(Point Set), 자세 추정값(Pose Estimate), 장면 그래프 노드를 함께 제공하도록 요구할 수 있다. 이를 통해 후속 구성요소가 실제 물리 목표를 검증할 수 있다.
+
+공간 추론도 신중하게 평가해야 한다. 언어 모델은 일반적인 관계 표현에는 강할 수 있지만 정확한 거리, 방향, 포함 관계, 시점 의존적 좌우 관계에서는 실패할 수 있다.
+
+평가는 의미 인식과 기하 정확도를 분리해야 한다. 지표에는 객체 선택 정확도, 3차원 교집합 대비 합집합(3D Intersection over Union), 중심 위치 오차, 방향 오차, 관계 분류, 좌표계 정확도가 포함될 수 있다.
+
+로봇 특화 평가에는 도달 가능성, 내비게이션 성공률, 파지 성공률, 관측 시점 품질(Viewpoint Quality), 충돌 회피, 폐루프 작업 완료율이 포함되어야 한다. 올바른 객체를 식별했더라도 사용할 수 없는 목표 자세를 제공한다면 충분하지 않다.
+
+강건성 시험(Robustness Test)은 희소한 포인트 클라우드, 센서 노이즈, 누락된 시점, 반사 물체, 보정 오류, 이동 객체, 익숙하지 않은 환경을 포함해야 한다. 증거가 약할 때 모델은 신뢰도를 낮춰야 한다.
+
+도메인 간 평가(Cross-Domain Evaluation)도 중요하다. 실내 방 스캔으로 학습한 시스템이 공장, 야외 현장, 복잡한 유지보수 공간으로 일반화된다고 보장할 수 없다. 환경의 구조와 스케일은 크게 다를 수 있다.
+
+개방 어휘 3차원 접지(Open-Vocabulary 3D Grounding)는 가장 유망한 응용 가운데 하나이다. 고정된 3차원 검출 클래스에 의존하지 않고 임의의 언어 설명으로 객체를 검색할 수 있다.
+
+이를 통해 전체 검출기를 다시 학습하지 않고도 비정형 공구, 새로 설치된 장비, 임시 장애물, 현장 특화 부품을 찾을 수 있다. 텍스트 임베딩은 의미적 유연성을 제공하고, 3차원 특징은 물리적 위치를 제공한다.
+
+그러나 개방 어휘 능력이 물리적 역량을 보장하는 것은 아니다. 모델은 "사다리"를 인식할 수 있지만 그것이 안정적이거나 올라갈 수 있는지는 판단하지 못할 수 있다. 물리적 속성에는 추가 센싱과 상호작용 지식이 필요하다.
+
+도구 사용(Tool Use)은 3D LLM의 신뢰성을 향상시킬 수 있다. 언어 모델은 포인트 클라우드 분할기, 자세 추정기, 충돌 검사기, 디지털 트윈 서비스, 지도 서버, 모션 플래너를 호출할 수 있다.
+
+언어 추론만으로 거리를 추정하는 대신 정확한 기하 계산을 요청할 수 있다. 목표가 도달 가능한지를 임의로 판단하는 대신 역기구학 해석기(Inverse-Kinematics Solver)를 호출할 수 있다.
+
+이러한 구조에서 3D LLM은 의미 및 기하 도구의 오케스트레이터(Orchestrator)가 된다. 요청을 해석하고, 관련 객체를 식별하며, 적절한 서비스를 선택하고, 결과를 통합하는 역할을 수행한다.
+
+권한 경계(Authority Boundary)는 반드시 유지되어야 한다. 환경의 텍스트, 라벨, 스캔된 문서를 실행 가능한 명령으로 자동 해석해서는 안 된다. 신뢰할 수 있는 작업자 명령은 신뢰할 수 없는 장면 콘텐츠와 구분되어야 한다.
+
+3차원-언어 시스템은 잘못된 지도 데이터나 오염된 디지털 트윈 정보에도 취약할 수 있다. 모든 외부 정보원에는 출처(Provenance), 버전, 신뢰도가 포함되어야 한다.
+
+포인트 클라우드는 수백만 개의 점을 포함할 수 있기 때문에 효율적인 배포가 어렵다. 언어 추론 이전에 다운샘플링(Downsampling), 복셀화(Voxelization), 객체 추출, 희소 어텐션(Sparse Attention), 잠재 리샘플링이 필요하다.
+
+그러나 케이블, 체결 부품, 손잡이, 균열, 얇은 장애물처럼 작지만 중요한 구조는 보존해야 한다. 과도한 압축은 검사나 조작에 필요한 바로 그 특징을 제거할 수 있다.
+
+따라서 계층적 처리(Hierarchical Processing)가 실용적이다. 거친 장면 토큰은 방 수준 이해와 내비게이션을 지원하고, 객체 토큰은 의미 접지를 지원하며, 밀집 지역 특징은 정밀 행동을 지원한다.
+
+대규모 언어 모델이 모든 밀집 기하 정보를 직접 처리할 필요는 없다. 압축된 의미 토큰으로 추론하고, 선택된 목표에 대해서만 고해상도 기하 분석을 요청할 수 있다.
+
+이러한 분리는 계산량을 줄이고 해석 가능성을 높인다. 엔지니어는 물리 행동이 시작되기 전에 모델이 어떤 객체나 장면 노드를 선택했는지 확인할 수 있다.
+
+포인트 클라우드-언어 접지의 장기적인 목표는 인간의 개념을 실행 가능한 3차원 현실과 연결하는 것이다. 로봇은 작업자가 밸브를 언급했다는 사실뿐 아니라 어떤 밸브인지, 어디에 있는지, 어떤 방향을 향하는지, 도달 가능한지, 어떤 상호작용이 가능한지를 이해해야 한다.
+
+3차원 대규모 언어 모델은 복잡한 공간 환경을 위한 유연한 의미 인터페이스(Semantic Interface)를 제공한다. 자연어 명령을 해석하고, 질문에 답하며, 실시간 관측을 지도와 디지털 트윈에 연결하고, 상위 수준의 계획을 지원할 수 있다.
+
+이러한 모델의 강점은 언어 이해, 개방 어휘 의미 처리, 관계 추론, 도구 오케스트레이션에 있다. 반면 불완전한 기하 정보, 환각, 제한된 정밀도, 센서 의존성, 부족한 물리 검증은 약점이다.
+
+피지컬 AI에서 가장 신뢰성 높은 아키텍처는 3D LLM을 보정된 포인트 클라우드 인식, 명시적인 좌표 변환, 객체 추적, 운동학 추론, 모션 계획, 결정론적 안전 시스템과 결합하는 것이다.
+
+3D LLM은 의도된 목표를 식별하고 설명한다. 기하 모듈은 정확한 물리 상태를 추정한다. 계획 시스템은 실행 가능한 행동을 결정한다. 제어기는 동작을 실행하고, 독립적인 안전 시스템은 한계를 강제한다.
+
+이러한 계층형 아키텍처에서 포인트 클라우드-언어 접지는 인간의 공간 개념과 로봇 행동 사이의 다리가 된다. "파이프 뒤쪽의 위쪽 밸브"와 같은 설명을 로봇이 검사하고, 접근하고, 조작할 수 있는 검증된 3차원 객체로 변환한다.
+
+데이터셋, 센서, 장면 표현, 멀티모달 아키텍처가 발전함에 따라 3D LLM은 정적인 스캔을 설명하는 수준에서 지속적이고, 상호작용적이며, 행동을 인식하는 물리 세계 모델을 유지하는 방향으로 발전할 것이다. 이러한 발전은 로봇이 운용 환경의 기하 구조 안에서 자연어를 직접 이해할 수 있도록 하는 핵심 기반이 될 것이다.
+
+##  
+
+## 3.5 Audio Vision Language Multi Modal Fusion [w/Code]
+
+![](images/image5.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+Audio-vision-language multimodal fusion is the process of combining acoustic signals, visual observations, and natural-language information into a coordinated representation that supports perception, reasoning, interaction, and action. In Physical AI, these three modalities provide complementary views of the environment. Vision describes visible objects, geometry, motion, and spatial relationships. Audio reveals events, machinery conditions, speech, direction, and activity that may be hidden from cameras. Language expresses human goals, semantic knowledge, operating procedures, constraints, and explanations. Their integration allows a robot to understand situations that cannot be interpreted reliably through any single modality.
+
+A robot operating in a factory may see a motor, hear an abnormal vibration, and receive an instruction to inspect the source of the noise. A service robot may observe several people while listening for the person who called its name. A patrol robot may hear breaking glass outside the camera's field of view and rotate toward the estimated sound direction. These examples show that multimodal fusion is not simply the addition of more sensors. It is the construction of relationships among what is seen, what is heard, and what is described or requested through language.
+
+The modalities differ greatly in structure. Images are dense spatial arrays, audio is a continuous temporal waveform, and language is a symbolic token sequence. Their sampling rates, dimensionality, uncertainty, and physical meanings are also different. A camera may operate at thirty frames per second, a microphone may record tens of thousands of samples per second, and a language instruction may arrive only once during a mission. A multimodal architecture must preserve the useful structure of each modality while creating a shared interface for reasoning.
+
+Audio is usually transformed before being processed by a neural model. Raw waveforms may be divided into short windows and converted into spectrograms, mel spectrograms, or learned acoustic tokens. A spectrogram represents how signal energy varies across frequency and time. This allows convolutional networks, audio transformers, or other sequence models to identify speech, alarms, impacts, machinery noise, footsteps, and environmental events.
+
+Visual input is typically processed by a convolutional network, Vision Transformer, video encoder, or object-centric perception model. The output may consist of image patch tokens, object tokens, motion features, scene representations, or tracked entities. Language is processed by a text encoder or large language model that represents instructions, questions, descriptions, procedures, and task context.
+
+The first major challenge is cross-modal alignment. The model must determine which audio event corresponds to which visual object, time interval, or language concept. A metallic impact may align with a tool falling in the image. A spoken command may align with the person whose mouth is moving. A high-frequency mechanical sound may align with a rotating motor visible in the scene.
+
+Temporal synchronization is essential. Audio and video streams must refer to the same physical moment. Even a small delay can create incorrect associations between sound and action. If a collision sound is paired with an image captured too early or too late, the model may learn the wrong cause.
+
+Hardware timestamps, calibrated buffering, clock synchronization, and relative-time encoding help preserve alignment. The model may also learn small residual delays caused by microphone distance, signal processing, network transmission, or camera exposure.
+
+Audio naturally contains propagation delay. Sound travels much more slowly than light, so a distant event is visible before its sound reaches the microphone. In large environments, this delay may become relevant. A physically informed system can consider estimated distance when aligning visual and acoustic observations.
+
+Spatial alignment is also important. Cameras observe directions through image coordinates, while microphone arrays estimate sound direction using time differences between channels. A sound-source location may be represented as an angle, probability distribution, or three-dimensional region.
+
+Audio-visual localization connects the estimated sound direction with visual objects or regions. If several machines are visible, the acoustic model may indicate which one is producing the abnormal sound. If the source is outside the current field of view, the robot may rotate its camera or body to investigate.
+
+Microphone arrays provide more spatial information than a single microphone. Beamforming can emphasize sounds from a selected direction, while direction-of-arrival estimation identifies possible source angles. These geometric results can be encoded as spatial tokens and fused with visual features.
+
+However, acoustic localization is affected by reverberation, reflections, background noise, multiple sound sources, and microphone placement. A hard factory surface may create echoes that make a sound appear to come from the wrong direction. Confidence and environmental acoustic properties should therefore be included in the fusion process.
+
+Language grounding adds a semantic layer. An operator may say, "Inspect the motor making the rattling sound," or "Go to the person calling for assistance." The model must align the language description with both audio and visual evidence.
+
+The word "rattling" may correspond to a particular acoustic pattern. The word "motor" may correspond to visual object candidates. The complete instruction requires the model to find the object satisfying both conditions. Language therefore acts as a query over the fused audio-visual scene.
+
+Cross-attention is a common fusion mechanism. Language queries can attend to acoustic tokens and visual tokens. An instruction token representing "alarm" may attend to high-energy periodic audio features and to visible warning lights or control panels.
+
+Audio tokens can also query vision. An acoustic event may retrieve visual objects that are spatially and semantically consistent with the sound. Visual tokens can query audio to determine whether a visible object is active, producing noise, or associated with speech.
+
+Bidirectional cross-attention allows repeated refinement. Audio helps select the relevant visual object, vision helps interpret the acoustic source, and language provides the task context. This is useful when each individual modality is ambiguous.
+
+For example, a camera may show three pumps with similar appearance. Audio indicates that one pump produces an irregular bearing sound. Language specifies that the robot should inspect the pump nearest to the left wall. The fused model combines acoustic abnormality, visual object identity, and spatial instruction to identify the correct target.
+
+Early fusion combines audio, visual, and language features near the input stage. All features are projected into a common embedding space and processed together. This allows direct interactions but can be computationally expensive because audio and video produce large numbers of tokens.
+
+Late fusion processes each modality independently and combines their final predictions. An audio classifier may detect an alarm, a vision model may detect smoke, and a decision module may combine the results. This is simple and modular but may miss detailed relationships between the modalities.
+
+Intermediate fusion is often more practical. Specialized encoders first extract modality-specific features. Cross-attention, shared latent tokens, gating, or multimodal transformer layers then combine the compressed representations. This preserves specialized perception while enabling detailed semantic interaction.
+
+Shared latent queries provide an efficient approach. A small set of learned tokens attends to audio, video, and language features and creates a compact multimodal representation. Some latent tokens may represent people, machines, events, risks, or task-relevant regions.
+
+Object-centric fusion can reduce complexity further. Instead of combining every image patch and every audio frame, the system creates visual object tokens and acoustic event tokens. The model then reasons about relationships between objects and sounds.
+
+An object token may include identity, pose, motion, and visual confidence. An acoustic event token may include sound class, time interval, frequency pattern, direction, loudness, and uncertainty. Language can connect these structured entities.
+
+Audio-event detection is an important capability. Robots may need to recognize alarms, impacts, glass breaking, human calls, footsteps, engine faults, pneumatic leaks, electrical arcing, or unusual vibration. Many of these events may be invisible or occur outside the camera view.
+
+Vision provides contextual validation. A loud impact in a factory may be ordinary if a press machine is operating, but unusual if it occurs near a stationary storage area. Audio meaning therefore depends on visual and task context.
+
+Conversely, audio can disambiguate visual observations. A person may be partially occluded but still identifiable through speech. A machine may appear visually normal while producing abnormal sound. A vehicle hidden behind an obstacle may be detected acoustically before becoming visible.
+
+Speech introduces both semantic and acoustic information. Automatic speech recognition converts audio into text, but the raw acoustic stream also contains speaker direction, identity, emotion, urgency, and environmental context.
+
+A robot may need to determine not only what was said but who said it and where the speaker is located. Audio-visual speaker association connects voice activity with face or body motion. Language understanding then interprets the spoken instruction.
+
+Speech recognition errors can create dangerous misunderstandings. Industrial noise, accents, reverberation, masks, and multiple speakers reduce accuracy. The system should preserve recognition confidence and may request confirmation for important commands.
+
+Trusted command channels must be separated from environmental speech. A robot should not treat any overheard conversation, recorded audio, or broadcast message as an authorized instruction. Speaker identity, authentication, role, and mission state should influence command acceptance.
+
+Audio prompt injection is also possible. A malicious or accidental recording may contain instructions intended to manipulate an AI system. Speech content should be classified as trusted operator input, environmental language, media playback, or unknown source before it can affect robot behavior.
+
+Audio-visual-language models can support human-robot interaction. A robot may track a speaking person, maintain conversational attention, interpret gestures, answer questions about the environment, and explain its observations.
+
+Visual cues such as gaze, pointing, posture, and object interaction help resolve linguistic references. When a person says, "Bring me that tool," gaze or pointing may indicate the intended object. Audio identifies the speaker and command, while vision grounds the reference.
+
+The model should also understand conversational turn-taking. Voice activity, pauses, facial motion, and language context indicate whether a person has finished speaking or expects a response. This makes interaction more natural and reduces interruption.
+
+Industrial monitoring is another major application. Machines produce characteristic acoustic signatures under normal operation. Changes in frequency, rhythm, amplitude, or transient behavior may indicate wear, imbalance, looseness, leakage, or impact.
+
+Vision can identify which machine is active and observe external symptoms such as vibration, smoke, loose components, or fluid leakage. Language connects the observations to maintenance procedures and diagnostic knowledge.
+
+A multimodal inspection model may hear an abnormal sound, locate the likely source, visually inspect the relevant component, retrieve a maintenance manual, and generate a structured report. This combines sensing, grounding, reasoning, and communication.
+
+However, acoustic diagnosis should not rely only on semantic language generation. Signal-processing tools may calculate spectral peaks, harmonics, envelope features, or vibration patterns more accurately. The multimodal model can call these tools and integrate their results.
+
+Tool use improves reliability. The model may invoke beamforming, speech recognition, source separation, sound classification, object detection, tracking, optical character recognition, digital-twin lookup, or maintenance databases.
+
+Instead of estimating every property internally, the model orchestrates specialized algorithms. It interprets the task, selects tools, connects their outputs, and explains the result.
+
+Source separation is important when several sounds occur simultaneously. A factory robot may hear speech, motors, ventilation, alarms, and impacts at the same time. Neural separation models attempt to isolate individual acoustic sources.
+
+Visual information can guide separation. If the model identifies a speaking person or active machine, it can emphasize the sound associated with that visual source. This is called audio-visual source separation.
+
+The separated sound can then be classified or transcribed more accurately. However, incorrect visual association may cause the model to suppress the true source. Confidence and alternative hypotheses should be maintained.
+
+Audio-visual event localization can operate over time. A video may contain several events, and the model must determine when each sound begins and ends and which visual object is responsible. Temporal attention or state space models can preserve event histories.
+
+Long-duration robot operation creates a memory challenge. Continuous audio and video cannot remain indefinitely inside a transformer context. The system should compress routine streams and preserve only important events, object tracks, speech segments, anomalies, and mission-relevant summaries.
+
+Event-based memory may store the time, location, source, confidence, visual evidence, transcription, and action outcome. An operator can later ask, "Where was the unusual motor sound first detected?" The model retrieves the corresponding event record.
+
+State space models can summarize continuous acoustic and visual dynamics efficiently. Cross-attention can then retrieve selected historical events when language queries require exact recall.
+
+Multimodal generation includes producing language from audio and vision, generating actions from fused observations, or predicting future sensory states. A robot may summarize a noisy scene, describe who is speaking, or generate an inspection response.
+
+Action generation may use an audio event as a trigger. Breaking glass may cause the robot to stop, orient toward the source, acquire visual confirmation, and notify an operator. A human distress call may trigger navigation to the speaker.
+
+Such actions must be validated by safety and mission systems. A detected sound is uncertain and may have several explanations. The robot should gather additional evidence rather than immediately perform a high-risk action.
+
+Active perception is particularly useful. When audio suggests an unseen event, the robot can rotate, move, zoom, or reposition its microphone and camera. New observations reduce uncertainty and improve grounding.
+
+The fusion system should decide which sensing action is most informative. If sound direction is uncertain, the robot may rotate the microphone array. If the visual source is occluded, it may move to another viewpoint.
+
+Uncertainty-aware fusion is essential. Each modality should include confidence, quality, and freshness. Audio may be unreliable because of noise, vision because of darkness, and language because of ambiguity.
+
+Gating mechanisms can adjust modality contribution dynamically. In a dark environment, audio may receive more weight. In a loud factory, visual evidence may dominate. During a spoken interaction, language and speaker localization become more important.
+
+Agreement between modalities can increase confidence, but correlated errors remain possible. A flashing screen and alarm sound may both be generated by a test system rather than a real emergency. Mission context and external validation remain necessary.
+
+Missing modalities should be handled explicitly. A camera may be blocked, a microphone may fail, or speech recognition may be unavailable. The model should know which modality is absent rather than interpreting a zero vector as a valid observation.
+
+Modality dropout during training improves robustness. The model learns to continue with partial information while reducing confidence. It may request another observation, switch sensors, or enter a safe mode.
+
+Dataset construction is difficult because audio, video, and language must be accurately aligned. Training examples require synchronized recordings, sound labels, visual annotations, language descriptions, spatial information, and sometimes action outcomes.
+
+Internet video provides large-scale data but often contains edited audio, background music, narration, or off-screen sound. The acoustic and visual streams may not represent the same physical event. Data filtering is therefore critical.
+
+Robot-specific data is even more valuable because it contains onboard microphone characteristics, camera viewpoints, motor noise, environmental reverberation, and task context. However, collecting and labeling such data is expensive.
+
+Simulation can generate controlled audio-visual scenes with exact source positions, object identities, room geometry, and event timing. Yet realistic acoustic simulation is difficult. Reverberation, material absorption, microphone response, and mechanical vibration must be modeled accurately.
+
+A strong training mixture should combine web video, speech data, environmental sound datasets, simulated environments, industrial recordings, and real robot operation. Domain adaptation is necessary when deployment acoustics differ from training conditions.
+
+Self-supervised learning can exploit natural audio-visual correspondence. Sounds and images recorded at the same time are treated as related, while mismatched segments become negative examples. The model learns which visual events are likely to produce which sounds.
+
+Cross-modal prediction is another objective. The system may predict future audio from visual motion, predict visual events from sound, reconstruct masked audio using video, or generate language descriptions from both modalities.
+
+However, synchronization alone does not guarantee causality. Background music may coincide with visual activity without being physically caused by it. Hard negative examples and causal evaluation are needed.
+
+Evaluation should separately measure alignment, fusion, and task performance. Audio-visual localization can be measured by source-direction accuracy or spatial overlap. Speech grounding can be evaluated by identifying the correct speaker or referenced object.
+
+Fusion robustness can be tested by adding noise, occluding the camera, introducing competing speakers, delaying one modality, or removing sensor channels. The model should reduce confidence and rely on alternative evidence appropriately.
+
+Language generation should be evaluated for factual grounding and hallucination. A model should not claim that an alarm occurred or a person spoke when the evidence is absent.
+
+Robot-level evaluation should include successful source localization, correct target selection, appropriate sensing action, navigation success, anomaly detection, response latency, and safety intervention.
+
+Closed-loop evaluation is necessary because the robot can actively change its viewpoint and acoustic position. A model that performs well on fixed recordings may fail when its own motion changes the observations.
+
+Latency is important because audio events may require rapid response. The complete pipeline includes audio buffering, feature extraction, visual processing, fusion, reasoning, planning, and action execution.
+
+Long audio windows improve classification but delay detection. Short windows respond quickly but contain less context. Dynamic window length can provide fast initial detection followed by more detailed analysis.
+
+Edge deployment requires efficient encoders, token compression, quantization, and event-driven processing. Continuously running a large multimodal transformer on raw audio and video may consume excessive power.
+
+A lightweight acoustic monitor can detect meaningful events and activate the larger multimodal model only when needed. Routine video can also be compressed into object and motion tokens.
+
+This hierarchical design reduces average computational cost. Local deterministic or compact models handle continuous monitoring, while a larger foundation model performs semantic interpretation and complex reasoning.
+
+Safety-critical signals should remain independent of the multimodal model. Certified alarms, collision sensors, emergency buttons, and protective systems must not rely only on learned audio-visual interpretation.
+
+The foundation model can provide context and reduce false alarms, but it should not override validated safety mechanisms. Its outputs remain probabilistic hypotheses.
+
+The long-term objective of audio-vision-language fusion is to create robots that understand physical events through multiple complementary forms of evidence. Such robots should know what happened, where it happened, what produced it, how certain the interpretation is, and how the event relates to the current mission.
+
+Audio extends awareness beyond the camera's field of view. Vision provides spatial and object grounding. Language connects observations with human intent, semantic knowledge, and explanation.
+
+Together, these modalities support more robust perception than any one stream alone. Their integration enables robots to communicate naturally, localize hidden events, diagnose equipment, identify speakers, interpret alarms, and select appropriate actions.
+
+A reliable Physical AI architecture will combine specialized audio and visual encoders, synchronized temporal representations, spatial calibration, cross-attention, uncertainty-aware gating, external memory, tool use, and deterministic safety validation.
+
+Within this architecture, audio-vision-language fusion becomes a bridge between sound, visible reality, and human meaning. It transforms separate acoustic, visual, and linguistic signals into a coherent understanding of events in the physical world and supports robot behavior that is more aware, explainable, and responsive.
+
+오디오-비전-언어 멀티모달 융합(Audio-Vision-Language Multimodal Fusion)은 음향 신호(Acoustic Signal), 시각 관측(Visual Observation), 자연어 정보(Natural-Language Information)를 하나의 조정된 표현(Coordinated Representation)으로 결합하여 인식(Perception), 추론(Reasoning), 상호작용(Interaction), 행동(Action)을 지원하는 과정이다. 피지컬 AI에서 이 세 가지 모달리티(Modality)는 환경에 대한 상호 보완적인 관점을 제공한다. 비전(Vision)은 보이는 객체, 기하 구조(Geometry), 움직임, 공간 관계를 설명한다. 오디오(Audio)는 카메라에 보이지 않을 수 있는 사건, 기계 상태, 음성, 방향, 활동 정보를 제공한다. 언어(Language)는 사람의 목표, 의미 지식(Semantic Knowledge), 운용 절차, 제약조건, 설명을 표현한다. 이들을 통합하면 하나의 모달리티만으로는 신뢰성 있게 해석하기 어려운 상황을 로봇이 이해할 수 있다.
+
+공장에서 동작하는 로봇은 모터를 보고, 비정상적인 진동음을 들으며, 소음의 원인을 검사하라는 명령을 받을 수 있다. 서비스 로봇은 여러 사람을 관찰하면서 자신의 이름을 부른 사람을 찾아야 할 수 있다. 순찰 로봇은 카메라 시야 밖에서 유리가 깨지는 소리를 듣고 추정된 소리 방향으로 몸체를 회전할 수 있다. 이러한 사례는 멀티모달 융합이 단순히 센서 수를 늘리는 작업이 아님을 보여준다. 이는 보이는 것, 들리는 것, 언어로 설명되거나 요청된 것 사이의 관계를 구축하는 과정이다.
+
+각 모달리티는 구조적으로 크게 다르다. 이미지는 밀집된 공간 배열(Dense Spatial Array)이고, 오디오는 연속적인 시간 파형(Continuous Temporal Waveform)이며, 언어는 상징적인 토큰 시퀀스(Symbolic Token Sequence)이다. 샘플링 주기(Sampling Rate), 차원, 불확실성, 물리적 의미도 서로 다르다. 카메라는 초당 30프레임으로 동작할 수 있고, 마이크는 초당 수만 개의 샘플을 기록하며, 언어 명령은 임무 중 한 번만 입력될 수 있다. 멀티모달 아키텍처는 각 모달리티의 유용한 구조를 보존하면서도 공통 추론 인터페이스를 만들어야 한다.
+
+오디오는 신경망 모델에 입력되기 전에 일반적으로 변환된다. 원시 파형(Raw Waveform)은 짧은 구간으로 나누고, 스펙트로그램(Spectrogram), 멜 스펙트로그램(Mel Spectrogram), 학습된 음향 토큰(Learned Acoustic Token)으로 변환할 수 있다. 스펙트로그램은 신호 에너지가 주파수와 시간에 따라 어떻게 변하는지를 표현한다. 이를 통해 합성곱 신경망(Convolutional Neural Network), 오디오 트랜스포머(Audio Transformer), 기타 시퀀스 모델이 음성, 경보, 충격음, 기계 소음, 발소리, 환경 사건을 식별할 수 있다.
+
+시각 입력은 일반적으로 합성곱 신경망, 비전 트랜스포머(Vision Transformer), 비디오 인코더(Video Encoder), 객체 중심 인식 모델(Object-Centric Perception Model)을 통해 처리된다. 출력은 이미지 패치 토큰(Image Patch Token), 객체 토큰(Object Token), 움직임 특징(Motion Feature), 장면 표현(Scene Representation), 추적된 객체(Tracked Entity)로 구성될 수 있다. 언어는 지시, 질문, 설명, 절차, 작업 문맥을 표현하는 텍스트 인코더(Text Encoder)나 대규모 언어 모델(Large Language Model)을 통해 처리된다.
+
+첫 번째 핵심 과제는 교차 모달 정렬(Cross-Modal Alignment)이다. 모델은 어떤 오디오 사건이 어떤 시각 객체, 시간 구간, 언어 개념에 대응하는지를 판단해야 한다. 금속성 충격음은 영상 속에서 떨어지는 공구와 정렬될 수 있다. 음성 명령은 입이 움직이는 사람과 연결될 수 있다. 고주파 기계음은 장면 속에서 회전 중인 모터와 연결될 수 있다.
+
+시간 동기화(Temporal Synchronization)는 필수적이다. 오디오와 비디오 스트림은 동일한 물리적 순간을 가리켜야 한다. 작은 지연만으로도 소리와 행동 사이에 잘못된 연관성이 만들어질 수 있다. 충돌음이 너무 이르거나 너무 늦게 촬영된 이미지와 연결되면 모델은 잘못된 원인을 학습할 수 있다.
+
+하드웨어 타임스탬프(Hardware Timestamp), 보정된 버퍼링(Calibrated Buffering), 시계 동기화(Clock Synchronization), 상대 시간 인코딩(Relative-Time Encoding)은 정렬을 유지하는 데 도움을 준다. 모델은 마이크 거리, 신호 처리, 네트워크 전송, 카메라 노출로 발생하는 작은 잔여 지연도 학습할 수 있다.
+
+오디오는 본질적으로 전파 지연(Propagation Delay)을 포함한다. 소리는 빛보다 훨씬 느리게 이동하므로, 먼 곳에서 발생한 사건은 소리가 마이크에 도달하기 전에 영상으로 먼저 관찰될 수 있다. 넓은 환경에서는 이러한 지연이 중요해질 수 있다. 물리 지식을 반영한 시스템은 시각 관측과 음향 관측을 정렬할 때 추정 거리를 고려할 수 있다.
+
+공간 정렬(Spatial Alignment)도 중요하다. 카메라는 이미지 좌표를 통해 방향을 관찰하고, 마이크 배열(Microphone Array)은 채널 간 시간 차이를 이용하여 소리 방향을 추정한다. 음원의 위치는 각도, 확률 분포, 3차원 영역으로 표현될 수 있다.
+
+오디오-비주얼 위치 추정(Audio-Visual Localization)은 추정된 소리 방향을 시각 객체나 이미지 영역과 연결한다. 여러 기계가 보이는 상황에서는 음향 모델이 어느 기계가 비정상음을 발생시키는지를 나타낼 수 있다. 음원이 현재 카메라 시야 밖에 있다면 로봇은 카메라나 몸체를 회전하여 조사할 수 있다.
+
+마이크 배열은 단일 마이크보다 더 많은 공간 정보를 제공한다. 빔포밍(Beamforming)은 특정 방향의 소리를 강조하고, 도래 방향 추정(Direction-of-Arrival Estimation)은 가능한 음원 각도를 식별한다. 이러한 기하 결과는 공간 토큰으로 인코딩하여 시각 특징과 융합할 수 있다.
+
+그러나 음향 위치 추정은 잔향(Reverberation), 반사(Reflection), 배경 소음, 다중 음원, 마이크 배치에 영향을 받는다. 공장의 단단한 표면은 에코(Echo)를 만들어 실제와 다른 방향에서 소리가 발생한 것처럼 보이게 할 수 있다. 따라서 융합 과정에는 신뢰도와 환경의 음향 특성이 포함되어야 한다.
+
+언어 접지(Language Grounding)는 의미 계층을 추가한다. 작업자는 "덜거덕거리는 소리를 내는 모터를 검사하라" 또는 "도움을 요청하는 사람에게 이동하라"고 지시할 수 있다. 모델은 언어 설명을 오디오 및 시각 증거와 모두 정렬해야 한다.
+
+"덜거덕거림(rattling)"이라는 단어는 특정 음향 패턴과 대응할 수 있다. "모터(motor)"라는 단어는 시각 객체 후보와 연결될 수 있다. 전체 명령을 수행하려면 모델은 두 조건을 모두 충족하는 객체를 찾아야 한다. 따라서 언어는 융합된 오디오-비주얼 장면에 대한 질의(Query) 역할을 한다.
+
+교차 어텐션(Cross-Attention)은 일반적인 융합 메커니즘이다. 언어 쿼리는 음향 토큰과 시각 토큰에 주의를 기울일 수 있다. "경보(alarm)"를 나타내는 지시 토큰은 높은 에너지를 가진 주기적 음향 특징과 보이는 경고등 또는 제어 패널에 주의를 기울일 수 있다.
+
+오디오 토큰도 비전에 질의할 수 있다. 음향 사건은 공간적·의미적으로 일치하는 시각 객체를 검색할 수 있다. 시각 토큰은 오디오에 질의하여 보이는 객체가 작동 중인지, 소음을 발생시키는지, 음성과 관련되어 있는지를 판단할 수 있다.
+
+양방향 교차 어텐션(Bidirectional Cross-Attention)은 반복적인 정제를 가능하게 한다. 오디오는 관련 시각 객체를 선택하는 데 도움을 주고, 비전은 음원을 해석하며, 언어는 작업 문맥을 제공한다. 이는 각각의 모달리티가 개별적으로는 모호한 경우에 특히 유용하다.
+
+예를 들어 카메라에는 외형이 유사한 세 개의 펌프가 보일 수 있다. 오디오는 그중 하나에서 불규칙한 베어링 소음이 발생하고 있음을 나타낸다. 언어 명령은 왼쪽 벽과 가장 가까운 펌프를 검사하라고 지정한다. 융합 모델은 음향 이상, 시각 객체 정체성, 공간 명령을 결합하여 올바른 목표를 식별한다.
+
+초기 융합(Early Fusion)은 입력 단계와 가까운 곳에서 오디오, 시각, 언어 특징을 결합한다. 모든 특징을 공통 임베딩 공간(Common Embedding Space)으로 투영하여 함께 처리한다. 이는 직접적인 상호작용을 지원하지만, 오디오와 비디오가 많은 토큰을 생성하므로 계산 비용이 커질 수 있다.
+
+후기 융합(Late Fusion)은 각 모달리티를 독립적으로 처리한 뒤 최종 예측 단계에서 결과를 결합한다. 오디오 분류기가 경보를 감지하고, 비전 모델이 연기를 감지한 뒤, 의사결정 모듈이 두 결과를 결합할 수 있다. 이 방식은 단순하고 모듈형이지만 세부적인 모달리티 관계를 놓칠 수 있다.
+
+중간 융합(Intermediate Fusion)은 일반적으로 더 실용적이다. 특화된 인코더가 먼저 모달리티별 특징을 추출하고, 교차 어텐션, 공유 잠재 토큰(Shared Latent Token), 게이팅(Gating), 멀티모달 트랜스포머 계층을 통해 압축된 표현을 결합한다. 이는 전문적인 인식 능력을 보존하면서도 세밀한 의미 상호작용을 가능하게 한다.
+
+공유 잠재 쿼리(Shared Latent Query)는 효율적인 접근을 제공한다. 소수의 학습된 토큰이 오디오, 비디오, 언어 특징에 주의를 기울여 압축된 멀티모달 표현을 만든다. 일부 잠재 토큰은 사람, 기계, 사건, 위험, 작업 관련 영역을 나타내도록 학습될 수 있다.
+
+객체 중심 융합(Object-Centric Fusion)은 복잡성을 더 줄일 수 있다. 모든 이미지 패치와 오디오 프레임을 결합하는 대신 시각 객체 토큰과 음향 이벤트 토큰(Acoustic Event Token)을 생성한다. 이후 모델은 객체와 소리 사이의 관계를 추론한다.
+
+객체 토큰은 정체성, 자세(Pose), 움직임, 시각 신뢰도를 포함할 수 있다. 음향 이벤트 토큰은 소리 클래스, 시간 구간, 주파수 패턴, 방향, 음량, 불확실성을 포함할 수 있다. 언어는 이러한 구조화된 요소들을 연결할 수 있다.
+
+오디오 이벤트 검출(Audio-Event Detection)은 중요한 능력이다. 로봇은 경보, 충격, 유리 파손, 사람의 호출, 발소리, 엔진 이상, 공압 누설(Pneumatic Leak), 전기 아크(Electrical Arcing), 비정상 진동을 인식해야 할 수 있다. 이러한 사건은 시야에 보이지 않거나 카메라 시야 밖에서 발생할 수 있다.
+
+비전은 문맥적 검증(Contextual Validation)을 제공한다. 공장에서 큰 충격음은 프레스 기계가 작동 중이라면 정상일 수 있지만, 정지된 보관 구역 근처에서 발생하면 이상일 수 있다. 따라서 오디오의 의미는 시각 및 작업 문맥에 따라 달라진다.
+
+반대로 오디오는 시각 관측의 모호성을 줄일 수 있다. 사람은 부분적으로 가려져 있어도 음성을 통해 식별할 수 있다. 기계는 시각적으로 정상처럼 보이지만 비정상음을 낼 수 있다. 장애물 뒤에 가려진 차량은 시야에 나타나기 전에 소리로 먼저 감지될 수 있다.
+
+음성(Speech)은 의미 정보와 음향 정보를 동시에 포함한다. 자동 음성 인식(Automatic Speech Recognition)은 오디오를 텍스트로 변환하지만, 원시 음향 스트림에는 화자의 방향, 정체성, 감정, 긴급도, 환경 문맥도 포함된다.
+
+로봇은 무엇을 말했는지만 아니라 누가 말했는지, 화자가 어디에 있는지도 판단해야 할 수 있다. 오디오-비주얼 화자 연계(Audio-Visual Speaker Association)는 음성 활동을 얼굴이나 신체 움직임과 연결한다. 이후 언어 이해 모듈이 음성 명령을 해석한다.
+
+음성 인식 오류는 위험한 오해를 만들 수 있다. 산업 소음, 억양, 잔향, 마스크, 다중 화자는 정확도를 낮춘다. 시스템은 인식 신뢰도를 유지하고 중요한 명령에는 확인을 요청할 수 있어야 한다.
+
+신뢰할 수 있는 명령 채널(Trusted Command Channel)은 환경의 음성과 분리되어야 한다. 로봇은 우연히 들은 대화, 녹음된 오디오, 방송 메시지를 공식 명령으로 처리해서는 안 된다. 화자 식별, 인증(Authentication), 역할(Role), 임무 상태가 명령 수용 여부에 영향을 주어야 한다.
+
+오디오 프롬프트 인젝션(Audio Prompt Injection)도 가능하다. 악의적이거나 우연히 재생된 녹음이 AI 시스템을 조작하는 명령을 포함할 수 있다. 음성 내용은 로봇 행동에 영향을 주기 전에 신뢰할 수 있는 작업자 입력, 환경 언어, 미디어 재생, 출처 불명 입력으로 분류되어야 한다.
+
+오디오-비전-언어 모델은 인간-로봇 상호작용(Human-Robot Interaction)을 지원할 수 있다. 로봇은 말하는 사람을 추적하고, 대화 시선을 유지하며, 제스처를 이해하고, 환경에 관한 질문에 답하며, 자신의 관측을 설명할 수 있다.
+
+시선(Gaze), 가리키기(Pointing), 자세(Posture), 객체와의 상호작용과 같은 시각 단서는 언어적 지시 대상을 명확히 하는 데 도움을 준다. 사람이 "저 공구를 가져와"라고 말하면 시선이나 손가락 방향이 목표 객체를 나타낼 수 있다. 오디오는 화자와 명령을 식별하고, 비전은 지시 대상을 접지한다.
+
+모델은 대화 차례 전환(Conversational Turn-Taking)도 이해해야 한다. 음성 활동, 침묵, 얼굴 움직임, 언어 문맥은 사람이 말을 마쳤는지, 응답을 기다리는지를 알려준다. 이를 통해 상호작용이 더 자연스러워지고 대화 중 끼어들기를 줄일 수 있다.
+
+산업 모니터링(Industrial Monitoring)은 또 다른 주요 활용 분야이다. 기계는 정상 운전 중 고유한 음향 특성을 가진다. 주파수, 리듬, 진폭, 순간적 변화가 달라지면 마모, 불균형, 느슨함, 누설, 충격을 나타낼 수 있다.
+
+비전은 어떤 기계가 작동 중인지 식별하고, 진동, 연기, 느슨한 부품, 유체 누설과 같은 외부 증상을 관찰할 수 있다. 언어는 이러한 관측을 유지보수 절차와 진단 지식에 연결한다.
+
+멀티모달 검사 모델은 비정상음을 듣고, 가능한 음원을 찾고, 관련 부품을 시각적으로 검사하고, 유지보수 매뉴얼을 검색한 뒤, 구조화된 보고서를 생성할 수 있다. 이는 센싱, 접지, 추론, 의사소통을 결합한 것이다.
+
+그러나 음향 진단은 의미 기반 언어 생성에만 의존해서는 안 된다. 신호처리 도구(Signal-Processing Tool)는 스펙트럼 피크, 고조파(Harmonic), 포락선 특징(Envelope Feature), 진동 패턴을 더 정확하게 계산할 수 있다. 멀티모달 모델은 이러한 도구를 호출하고 결과를 통합할 수 있다.
+
+도구 사용(Tool Use)은 신뢰성을 향상시킨다. 모델은 빔포밍, 음성 인식, 음원 분리(Source Separation), 소리 분류, 객체 검출, 추적, 광학 문자 인식(OCR), 디지털 트윈 조회, 유지보수 데이터베이스를 호출할 수 있다.
+
+모든 속성을 내부적으로 추정하는 대신 전문 알고리즘을 조율한다. 모델은 작업을 해석하고, 도구를 선택하며, 도구의 출력을 연결하고, 결과를 설명한다.
+
+여러 소리가 동시에 발생할 때는 음원 분리가 중요하다. 공장 로봇은 음성, 모터, 환기 장치, 경보, 충격음을 동시에 들을 수 있다. 신경망 기반 분리 모델은 각각의 음원을 분리하려고 한다.
+
+시각 정보는 분리를 안내할 수 있다. 모델이 말하는 사람이나 작동 중인 기계를 식별하면 해당 시각 음원과 연결된 소리를 강조할 수 있다. 이를 오디오-비주얼 음원 분리(Audio-Visual Source Separation)라고 한다.
+
+분리된 소리는 더 정확하게 분류하거나 전사(Transcription)할 수 있다. 그러나 잘못된 시각 연계는 실제 음원을 억제할 수 있다. 따라서 신뢰도와 대안 가설(Alternative Hypothesis)을 함께 유지해야 한다.
+
+오디오-비주얼 이벤트 위치 추정은 시간에 따라 동작할 수 있다. 비디오 안에는 여러 사건이 있을 수 있고, 모델은 각 소리가 언제 시작되고 끝나는지, 어떤 시각 객체가 원인인지를 판단해야 한다. 시간 어텐션(Temporal Attention)이나 상태공간 모델(State Space Model)은 이벤트 이력을 유지할 수 있다.
+
+장시간 로봇 운용은 메모리 문제를 만든다. 연속적인 오디오와 비디오 전체를 트랜스포머 컨텍스트에 무한히 유지할 수 없다. 시스템은 일상적인 스트림을 압축하고 중요한 사건, 객체 추적 기록, 음성 구간, 이상 상황, 임무 관련 요약만 보존해야 한다.
+
+이벤트 기반 메모리(Event-Based Memory)는 발생 시간, 위치, 음원, 신뢰도, 시각 증거, 전사 내용, 행동 결과를 저장할 수 있다. 작업자는 이후 "비정상적인 모터 소음을 처음 감지한 위치가 어디인가?"라고 질문할 수 있다. 모델은 이에 대응하는 이벤트 기록을 검색한다.
+
+상태공간 모델은 연속적인 음향 및 시각 동역학을 효율적으로 요약할 수 있다. 이후 교차 어텐션은 언어 질의가 정확한 회상을 요구할 때 선택된 과거 이벤트를 검색할 수 있다.
+
+멀티모달 생성(Multimodal Generation)은 오디오와 비전으로부터 언어를 생성하거나, 융합 관측으로부터 행동을 생성하거나, 미래 센서 상태를 예측하는 작업을 포함한다. 로봇은 소음이 많은 장면을 요약하고, 누가 말하고 있는지를 설명하거나, 검사 대응 절차를 생성할 수 있다.
+
+행동 생성은 오디오 이벤트를 트리거로 사용할 수 있다. 유리 파손음은 로봇이 정지하고, 음원 방향으로 회전하고, 시각적 확인을 수행한 뒤 작업자에게 알리도록 할 수 있다. 사람의 구조 요청은 화자 위치로 이동하는 행동을 유발할 수 있다.
+
+그러나 이러한 행동은 안전 시스템과 임무 시스템에 의해 검증되어야 한다. 감지된 소리는 불확실하며 여러 원인을 가질 수 있다. 로봇은 즉시 위험한 행동을 수행하기보다 추가 증거를 수집해야 한다.
+
+능동적 인식(Active Perception)은 특히 유용하다. 오디오가 보이지 않는 사건을 나타내면 로봇은 회전, 이동, 확대, 마이크와 카메라 위치 변경을 수행할 수 있다. 새로운 관측은 불확실성을 줄이고 접지를 향상시킨다.
+
+융합 시스템은 어떤 센싱 행동이 가장 많은 정보를 제공하는지 결정해야 한다. 소리 방향이 불확실하면 마이크 배열의 방향을 변경할 수 있다. 시각 음원이 가려져 있다면 다른 시점으로 이동할 수 있다.
+
+불확실성 인식 융합(Uncertainty-Aware Fusion)은 필수적이다. 각 모달리티는 신뢰도, 품질, 최신성(Freshness)을 포함해야 한다. 오디오는 소음 때문에, 비전은 어두움 때문에, 언어는 모호성 때문에 신뢰성이 낮을 수 있다.
+
+게이팅 메커니즘은 모달리티별 기여도를 동적으로 조절할 수 있다. 어두운 환경에서는 오디오에 더 높은 가중치를 줄 수 있다. 소음이 심한 공장에서는 시각 증거가 더 중요할 수 있다. 음성 상호작용 중에는 언어와 화자 위치 추정이 더 중요해진다.
+
+모달리티 간 일치는 신뢰도를 높일 수 있지만 상관된 오류(Correlated Error)는 여전히 가능하다. 점멸하는 화면과 경보음이 실제 긴급상황이 아니라 시험 시스템에서 동시에 생성된 것일 수도 있다. 따라서 임무 문맥과 외부 검증이 필요하다.
+
+누락된 모달리티는 명시적으로 처리해야 한다. 카메라가 가려지거나, 마이크가 고장나거나, 음성 인식 기능을 사용할 수 없을 수 있다. 모델은 0 벡터를 정상적인 관측으로 오해하지 않고 어떤 모달리티가 없는지를 알아야 한다.
+
+학습 중 모달리티 드롭아웃(Modality Dropout)을 적용하면 강건성을 높일 수 있다. 모델은 일부 정보만으로 계속 동작하는 방법을 학습하면서 신뢰도를 낮춘다. 추가 관측을 요청하거나, 다른 센서로 전환하거나, 안전 모드로 진입할 수 있다.
+
+데이터셋 구축은 오디오, 비디오, 언어가 정확하게 정렬되어야 하므로 어렵다. 학습 예제에는 동기화된 녹음, 소리 라벨, 시각 주석, 언어 설명, 공간 정보, 경우에 따라 행동 결과가 필요하다.
+
+인터넷 비디오는 대규모 데이터를 제공하지만 편집된 오디오, 배경 음악, 내레이션, 화면 밖 소리를 포함하는 경우가 많다. 음향 스트림과 시각 스트림이 동일한 물리적 사건을 표현하지 않을 수 있다. 따라서 데이터 필터링이 중요하다.
+
+로봇 특화 데이터는 온보드 마이크 특성, 카메라 시점, 모터 소음, 환경 잔향, 작업 문맥을 포함하므로 더욱 가치가 높다. 그러나 이러한 데이터를 수집하고 라벨링하는 데는 많은 비용이 든다.
+
+시뮬레이션은 정확한 음원 위치, 객체 정체성, 실내 구조, 사건 시간을 가진 통제된 오디오-비주얼 장면을 생성할 수 있다. 그러나 사실적인 음향 시뮬레이션은 어렵다. 잔향, 재질별 흡음, 마이크 응답, 기계 진동을 정확하게 모델링해야 한다.
+
+강력한 학습 데이터 구성은 웹 비디오, 음성 데이터, 환경음 데이터셋, 시뮬레이션 환경, 산업 현장 녹음, 실제 로봇 운용 데이터를 함께 포함해야 한다. 배포 환경의 음향 특성이 학습 환경과 다를 때는 도메인 적응(Domain Adaptation)이 필요하다.
+
+자기지도 학습(Self-Supervised Learning)은 자연스러운 오디오-비주얼 대응 관계를 활용할 수 있다. 동일한 시간에 기록된 소리와 이미지는 관련된 쌍으로 취급하고, 일치하지 않는 구간은 부정 예제(Negative Example)로 사용할 수 있다. 모델은 어떤 시각 사건이 어떤 소리를 발생시킬 가능성이 높은지를 학습한다.
+
+교차 모달 예측(Cross-Modal Prediction)도 가능한 학습 목표이다. 시스템은 시각 움직임으로부터 미래 오디오를 예측하고, 소리로부터 시각 사건을 예측하며, 비디오를 이용해 마스킹된 오디오를 복원하거나, 두 모달리티를 이용해 언어 설명을 생성할 수 있다.
+
+그러나 시간적 동시성이 항상 인과성을 의미하는 것은 아니다. 배경 음악이 시각 활동과 동시에 존재할 수 있지만 해당 활동에 의해 물리적으로 발생한 것은 아니다. 어려운 부정 예제(Hard Negative)와 인과 평가(Causal Evaluation)가 필요하다.
+
+평가는 정렬, 융합, 작업 성능을 별도로 측정해야 한다. 오디오-비주얼 위치 추정은 음원 방향 정확도나 공간 중첩으로 평가할 수 있다. 음성 접지는 올바른 화자나 지시 객체를 식별하는지를 측정할 수 있다.
+
+융합 강건성은 소음 추가, 카메라 가림, 경쟁 화자 추가, 하나의 모달리티 지연, 센서 채널 제거를 통해 평가할 수 있다. 모델은 신뢰도를 낮추고 대체 증거를 적절히 활용해야 한다.
+
+언어 생성은 사실적 접지와 환각 여부를 평가해야 한다. 증거가 없는데도 경보가 발생했거나 사람이 말했다고 주장해서는 안 된다.
+
+로봇 수준 평가는 음원 위치 추정 성공, 올바른 목표 선택, 적절한 센싱 행동, 내비게이션 성공, 이상 탐지, 대응 지연 시간, 안전 개입을 포함해야 한다.
+
+폐루프 평가(Closed-Loop Evaluation)는 로봇이 시점과 음향 위치를 능동적으로 변경할 수 있기 때문에 필요하다. 고정된 녹음에서는 잘 동작하는 모델도 자신의 움직임이 관측을 변화시키는 상황에서는 실패할 수 있다.
+
+오디오 사건은 빠른 반응을 요구할 수 있으므로 지연 시간도 중요하다. 전체 파이프라인에는 오디오 버퍼링, 특징 추출, 시각 처리, 융합, 추론, 계획, 행동 실행이 포함된다.
+
+긴 오디오 윈도우(Audio Window)는 분류 성능을 향상시키지만 감지 지연을 증가시킨다. 짧은 윈도우는 빠르게 반응하지만 문맥이 부족하다. 동적 윈도우 길이(Dynamic Window Length)를 사용하면 빠른 초기 감지 후 더 상세한 분석을 수행할 수 있다.
+
+엣지 배포(Edge Deployment)에는 효율적인 인코더, 토큰 압축, 양자화(Quantization), 이벤트 기반 처리가 필요하다. 원시 오디오와 비디오를 대형 멀티모달 트랜스포머로 계속 처리하면 과도한 전력을 소비할 수 있다.
+
+경량 음향 모니터(Lightweight Acoustic Monitor)가 의미 있는 사건을 먼저 감지한 뒤 필요할 때만 대형 멀티모달 모델을 활성화할 수 있다. 일상적인 비디오도 객체 및 움직임 토큰으로 압축할 수 있다.
+
+이러한 계층형 설계는 평균 계산 비용을 줄인다. 로컬 결정론적 모델이나 소형 모델이 연속 모니터링을 담당하고, 더 큰 파운데이션 모델이 의미 해석과 복잡한 추론을 수행한다.
+
+안전에 중요한 신호는 멀티모달 모델과 독립적으로 유지되어야 한다. 인증된 경보, 충돌 센서, 비상 버튼, 보호 시스템은 학습된 오디오-비주얼 해석에만 의존해서는 안 된다.
+
+파운데이션 모델은 문맥을 제공하고 오경보를 줄일 수 있지만 검증된 안전 메커니즘을 무효화해서는 안 된다. 모델 출력은 여전히 확률적인 가설이다.
+
+오디오-비전-언어 융합의 장기적인 목표는 여러 상호 보완적인 증거를 이용하여 물리적 사건을 이해하는 로봇을 만드는 것이다. 이러한 로봇은 무엇이 발생했는지, 어디에서 발생했는지, 무엇이 원인이었는지, 해석의 확실성이 어느 정도인지, 현재 임무와 어떤 관계가 있는지를 이해해야 한다.
+
+오디오는 카메라 시야 밖까지 인식 범위를 확장한다. 비전은 공간 및 객체 접지를 제공한다. 언어는 관측을 사람의 의도, 의미 지식, 설명과 연결한다.
+
+이러한 모달리티를 결합하면 하나의 정보 스트림만 사용하는 것보다 더 강건한 인식이 가능하다. 로봇은 자연스럽게 의사소통하고, 보이지 않는 사건을 찾고, 장비를 진단하고, 화자를 식별하고, 경보를 해석하고, 적절한 행동을 선택할 수 있다.
+
+신뢰할 수 있는 피지컬 AI 아키텍처는 특화된 오디오 및 비전 인코더, 동기화된 시간 표현, 공간 보정, 교차 어텐션, 불확실성 인식 게이팅, 외부 메모리, 도구 사용, 결정론적 안전 검증을 결합할 것이다.
+
+이러한 아키텍처 안에서 오디오-비전-언어 융합은 소리, 시각적 현실, 인간의 의미를 연결하는 다리가 된다. 분리된 음향, 시각, 언어 신호를 물리 세계에서 발생하는 사건에 대한 일관된 이해로 변환하며, 로봇이 더 높은 상황 인식 능력, 설명 가능성, 반응성을 갖도록 지원한다.
+
+##  
+
+## 3.6 Tactile Vision Language Representation [w/Code]
+
+![](images/image6.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+Tactile-vision-language representation is the study of how touch, visual perception, and natural-language knowledge can be combined into a unified but structured model of physical interaction. In Physical AI, these three modalities provide different forms of evidence about objects, environments, and actions. Vision describes appearance, shape, position, motion, and visible context. Tactile sensing reveals contact, pressure, texture, slip, compliance, temperature, and local surface geometry. Language expresses goals, object concepts, task procedures, constraints, and explanations. Their integration enables robots to move beyond merely recognizing objects toward understanding how those objects can be physically handled.
+
+Vision is powerful before contact. A camera can identify a cup, estimate its approximate position, observe its handle, and detect nearby obstacles. However, visual information becomes less reliable when the robot approaches or grasps the object. The hand may block the camera, transparent or reflective surfaces may confuse depth estimation, and the actual contact condition may remain invisible. Tactile sensing becomes especially important at this stage because it provides direct information about the interaction between the robot and the object.
+
+A robot may visually identify a box and generate a grasp plan, but only tactile feedback can confirm whether the fingers have made stable contact, whether the object is slipping, whether excessive force is being applied, or whether the surface is softer than expected. Language then connects these observations to task meaning. An instruction such as "hold the fragile container gently" implies that the robot should interpret tactile pressure and compliance differently from a command to lift a rigid metal part.
+
+Tactile sensing includes several technologies and signal formats. Force and torque sensors measure interaction forces at the wrist, joint, or tool. Pressure arrays measure contact distribution across a surface. Capacitive, piezoresistive, optical, magnetic, and elastomer-based sensors estimate deformation and local pressure. Vision-based tactile sensors use an internal camera to observe the deformation of a soft contact surface.
+
+The output of a tactile sensor may be a scalar force value, a multidimensional wrench, a dense pressure map, an image-like deformation pattern, or a temporal sequence. These representations differ significantly from conventional RGB images and language tokens. A multimodal model must preserve their physical meaning while creating a shared interface for reasoning.
+
+Tactile data is highly local. A camera may observe an entire scene, while a tactile sensor usually describes only the small region currently in contact. This difference creates a complementary relationship. Vision provides global context and predicts where contact may occur. Touch provides detailed local evidence about what actually happened.
+
+The relationship between visual and tactile observations is not always direct. The object surface visible before grasping may become occluded during contact. The contact point may lie on the rear or underside of the object. The tactile sensor may therefore observe a region that was never clearly visible.
+
+Cross-modal representation learning must connect the contact signal with the object identity, estimated surface, gripper pose, and action history. Accurate robot kinematics and coordinate transformations help associate tactile observations with positions in the visual or three-dimensional scene.
+
+Temporal alignment is also essential. Contact forces can change within milliseconds, while cameras may operate at tens of frames per second. If tactile and visual streams are aligned only by frame number, the model may connect a slip event with the wrong motion or object pose.
+
+Hardware timestamps, synchronized control logs, relative-time encoding, and interpolation are necessary for learning correct physical relationships. High-frequency tactile signals may be processed by a local temporal encoder and then summarized into compact event tokens for multimodal reasoning.
+
+A tactile event token may represent first contact, increasing pressure, stable grasp, incipient slip, full slip, collision, surface transition, release, or unexpected impact. These event-level representations are more efficient than inserting every raw tactile sample into a large transformer context.
+
+Vision encoders typically produce image patches, object tokens, depth features, or three-dimensional scene representations. Tactile encoders may use convolutional networks for tactile images, temporal transformers for sensor sequences, state space models for continuous streams, or graph models for distributed sensors across a robotic hand.
+
+Language is usually encoded by a transformer-based text encoder or large language model. Language tokens may describe object identity, material, expected interaction, required force, task phase, or safety constraints. Cross-attention can then connect language with visual and tactile representations.
+
+A language query such as "grasp the soft object without deforming it" can attend to visual tokens to identify the object and to tactile tokens to monitor deformation and pressure. The model must combine what the object appears to be with what the contact actually feels like.
+
+Vision can also query tactile information. An object representation may retrieve recent contact features to update its estimated material, stability, or pose. A visually ambiguous object may be classified more accurately after touch.
+
+Tactile tokens can query visual information as well. A pressure pattern may indicate edge contact, but vision can determine which object edge is involved. The combined representation becomes more informative than either modality alone.
+
+Bidirectional cross-attention is useful because the modalities refine each other. Vision predicts contact location and object geometry. Touch corrects visual uncertainty and confirms physical state. Language provides the task-dependent interpretation of both.
+
+For example, the same tactile pressure may have different meanings under different instructions. During a secure industrial grasp, increasing force may be acceptable. During manipulation of a fragile object, the same force may indicate danger. Language conditions the interpretation of tactile evidence.
+
+Representation learning may use a shared latent space. Visual, tactile, and language features associated with the same object or interaction are brought closer together. A tactile pattern produced by touching rubber should align with visual examples and language descriptions related to softness, elasticity, and high friction.
+
+Contrastive learning can support this alignment. Matching visual-tactile-language observations are treated as positive examples, while unrelated combinations are treated as negatives. The model learns that a rough metallic surface should not align with language describing smooth fabric.
+
+However, contrastive learning may exploit shortcuts. A particular robot gripper, background, or sensor configuration may become associated with specific materials or tasks. Diverse objects, viewpoints, sensors, forces, and environments are necessary to encourage physically meaningful representation.
+
+Cross-modal prediction provides another learning objective. The model may predict tactile feedback from visual appearance and planned action. It may predict object motion from tactile contact and robot state. It may generate a language description of a surface from visual and tactile evidence.
+
+Predicting touch from vision is useful because the robot can estimate likely friction, hardness, or contact behavior before acting. However, visual appearance does not uniquely determine physical properties. Two objects with similar appearance may have different mass, compliance, or surface treatment.
+
+Therefore, predicted tactile properties should be treated as prior beliefs rather than confirmed measurements. Actual touch updates those beliefs after contact.
+
+Predicting visual change from tactile and action history teaches the model how contact affects objects. A lateral force combined with tactile slip may predict that the object will move. Stable pressure across several fingers may indicate a secure grasp.
+
+Language generation from tactile information can support explainability. A robot may report that an object feels softer than expected, that the grip is unstable, or that contact occurred earlier than predicted. Such explanations help operators understand physical failures.
+
+The quality of these explanations depends on grounding. A language model may generate plausible tactile descriptions even when sensor evidence is weak. Every tactile claim should therefore be connected to measurable signals, confidence, and contact location.
+
+Tactile-vision-language representation is especially important for material understanding. Vision may suggest whether an object is metal, plastic, fabric, wood, rubber, or glass, but touch provides evidence about texture, stiffness, friction, temperature, and deformability.
+
+Material properties influence grasp planning and control. A smooth object may require greater normal force or a different contact strategy. A soft object may require lower force and larger contact area. A brittle object may require careful acceleration and vibration control.
+
+Multimodal models can represent these properties as probabilistic attributes rather than fixed labels. The robot may believe that an object is likely to be rigid but update this estimate after detecting deformation.
+
+Slip detection is one of the most important tactile tasks. Slip may appear as rapid changes in pressure, vibration, shear force, or marker motion inside a vision-based tactile sensor. Visual motion may also show that the object is moving relative to the gripper.
+
+Combining vision and touch improves reliability. Tactile sensing can detect early slip before large visual motion occurs, while vision confirms the global direction and consequence of the movement.
+
+A slip-aware language-conditioned policy can respond according to task context. It may tighten the grasp, change finger position, slow the motion, place the object down, or request assistance.
+
+Contact localization is another key capability. The system must identify where the robot touched the object and which robot surface made contact. Tactile arrays provide local coordinates, while kinematics transform them into the robot or world frame.
+
+Visual and three-dimensional scene models can associate the contact with an object surface. This supports tasks such as insertion, surface following, edge tracing, and defect inspection.
+
+Pose estimation can be improved through tactile feedback. Vision may provide an approximate object pose, while contact reveals the exact relationship between the gripper and object. A sequence of contacts can refine pose through tactile servoing.
+
+Tactile servoing uses contact information to adjust movement continuously. During insertion, the robot may detect asymmetric pressure and correct alignment. During surface following, it maintains a desired contact force while adapting to local geometry.
+
+Language can specify the desired interaction mode. Instructions such as "insert until fully seated," "follow the seam," or "press lightly against the surface" define different tactile goals.
+
+The representation should therefore include not only observed contact but desired contact. Target force, allowable deformation, contact region, expected duration, and task phase can be encoded as language-conditioned control context.
+
+Affordance understanding also benefits from multimodal representation. Vision may identify a handle, button, cable, fabric edge, or lid. Touch can determine whether the component moves, clicks, bends, or resists force.
+
+Language describes the intended affordance, such as pulling, pressing, turning, sliding, folding, or inserting. The model must connect the visible part with the tactile response expected from the action.
+
+An affordance is not a static object property. It depends on the robot body, tool, direction, force, and task. A handle may be graspable by one gripper but not another. A button may be pressable only from a certain angle.
+
+Embodiment information must therefore be included. Robot-hand geometry, finger configuration, sensor placement, joint limits, tool type, and force capability influence interpretation and action.
+
+Cross-embodiment learning is difficult because different robotic hands produce different tactile signals. A two-finger gripper, anthropomorphic hand, suction tool, and tactile probe do not share the same sensor layout or contact mechanics.
+
+Morphology-aware encodings can describe sensor location, finger identity, link structure, contact frame, and available action space. A shared model can then learn higher-level concepts such as stable contact or slip while using robot-specific adapters for raw signals.
+
+Object-centric memory can preserve tactile experience. After touching an object, the robot can store estimated material, friction, stiffness, grasp quality, and successful contact regions. Future interactions can retrieve this information.
+
+This is valuable for repeated industrial tasks. A robot may learn that a specific component is more slippery than its visual appearance suggests or that a particular grasp point produces unstable contact.
+
+Memory should include the context under which the observation was made. Friction may depend on surface contamination, temperature, humidity, tool condition, or object orientation. Stored tactile experience should not be treated as universally valid.
+
+Digital twins can also be enriched with tactile information. A component model may contain expected stiffness, contact regions, insertion force, or fastening torque. Live tactile observations can be compared with these nominal values.
+
+A difference between expected and measured contact may indicate misalignment, wear, obstruction, damage, or incorrect assembly. The multimodal model can explain the discrepancy and recommend additional inspection.
+
+Tactile data is useful for anomaly detection. Unexpected force peaks, asymmetric pressure, unusual vibration, or repeated slip may indicate a problem even when vision appears normal.
+
+Vision helps determine whether the anomaly comes from the object, the robot, or the environment. Language connects the pattern with diagnostic procedures and maintenance knowledge.
+
+A robot inserting a connector may detect higher-than-normal resistance. Visual inspection may show no obvious obstruction. The system can stop, withdraw, inspect alignment, and report an abnormal insertion-force profile.
+
+Such decisions should not rely solely on a large generative model. Deterministic force limits, collision thresholds, and emergency withdrawal behaviors must remain active independently.
+
+Tactile-vision-language models should operate within a layered control architecture. The foundation model interprets the task, estimates object properties, identifies contact state, and proposes actions. Low-level controllers regulate force, position, velocity, and impedance.
+
+Safety systems enforce maximum force, joint limits, speed, workspace, and collision constraints. The multimodal model provides context but does not replace validated control and protection mechanisms.
+
+Data collection is a major challenge. High-quality training data must include synchronized images, tactile measurements, robot state, actions, language descriptions, object identity, contact location, and task outcome.
+
+Manual annotation of tactile events is expensive. Contact labels may require expert interpretation, and many important states occur briefly. Automatic labels can be derived from force thresholds, object motion, control state, or simulation, but these labels may be imperfect.
+
+Robot demonstrations provide valuable multimodal sequences. Human teleoperation or kinesthetic teaching can connect language instructions, visual scenes, tactile feedback, and successful actions. Failed demonstrations are also important because they reveal slip, collision, excessive force, and recovery behavior.
+
+Simulation can generate exact contact labels, forces, poses, and material parameters. It allows large-scale variation in objects, friction, stiffness, and actions. However, realistic tactile simulation remains difficult.
+
+Real sensors contain deformation, hysteresis, temperature effects, wear, drift, electronic noise, and manufacturing variation. Contact mechanics may differ from simplified simulation. Sim-to-real transfer therefore requires domain randomization and real-world adaptation.
+
+Self-supervised learning can reduce annotation requirements. The model can predict future tactile signals, reconstruct masked contact regions, align touch with visual motion, or distinguish synchronized from mismatched interaction sequences.
+
+Tactile data naturally provides a learning signal because it records the physical consequence of action. The robot can compare predicted and observed contact to improve its internal model.
+
+Uncertainty must be represented explicitly. Tactile sensors may saturate, drift, lose calibration, or produce ambiguous signals. Visual observations may be occluded. Language instructions may be unclear.
+
+The fusion system should account for sensor health, calibration confidence, observation age, and task risk. When tactile evidence is unreliable, the robot may reduce force, move more slowly, or obtain another contact.
+
+Active touch is an important form of active perception. The robot may intentionally tap, squeeze, slide, press, or rotate an object to obtain information. The chosen action should maximize useful information while respecting safety constraints.
+
+A light tap may estimate rigidity. A controlled squeeze may estimate compliance. Sliding contact may reveal texture and friction. Small exploratory motion may determine whether a component is loose.
+
+Language can guide active touch. An instruction to determine whether a package is empty, soft, sealed, or securely attached requires different exploratory actions.
+
+The model must balance information gain with task cost and risk. Excessive exploration may damage fragile objects or slow production. World models and uncertainty estimates can help select efficient sensing actions.
+
+Evaluation should measure more than classification accuracy. Important metrics include contact detection, slip prediction, material recognition, force estimation, pose refinement, grasp stability, insertion success, tactile grounding, uncertainty calibration, and recovery performance.
+
+Modality ablation can determine whether the model uses vision, touch, and language meaningfully. If performance remains unchanged after tactile input is removed from a contact-rich task, the model may be relying on visual shortcuts.
+
+Counterfactual tests can modify tactile signals, object appearance, or instructions. A model should respond differently when an object becomes softer, when slip begins, or when the instruction changes from firm grasping to gentle handling.
+
+Closed-loop evaluation is essential because tactile predictions affect control, which changes future contact. Small errors can create unstable force feedback or repeated slip.
+
+Real-robot tests should include unseen objects, changing friction, sensor noise, occlusion, imperfect calibration, and variable payload. The system should reduce confidence and enter safe behavior when conditions exceed its training distribution.
+
+Efficient deployment is also important. High-frequency tactile streams cannot be processed continuously by a large language model. Local encoders should compress raw signals into contact states, events, or latent summaries.
+
+A hierarchical design may use a fast tactile controller for millisecond-level response, a medium-rate multimodal model for grasp and manipulation state, and a slower language model for reasoning, planning, and explanation.
+
+This separation preserves real-time control while still benefiting from foundation-model intelligence. The language model does not need to participate directly in every force-control update.
+
+The long-term goal of tactile-vision-language representation is to create robots that understand objects not only by how they look but also by how they feel and how they should be handled.
+
+Such a robot should connect visible shape with contact geometry, tactile signals with material properties, language with task intent, and action with physical consequence.
+
+Vision provides anticipation, touch provides confirmation, and language provides semantic and procedural context. Together, they support robust interaction with objects whose physical properties cannot be determined from appearance alone.
+
+A reliable Physical AI architecture will combine specialized visual and tactile encoders, synchronized temporal processing, coordinate-frame alignment, cross-attention, uncertainty-aware fusion, embodiment models, external memory, deterministic force control, and independent safety systems.
+
+Within this architecture, tactile-vision-language representation becomes the bridge between perception and physical interaction. It transforms separate visual, contact, and linguistic signals into a grounded understanding of what an object is, how it is being touched, how it is responding, and what the robot should do next.
+
+촉각-비전-언어 표현(Tactile-Vision-Language Representation)은 촉각(Touch), 시각 인식(Visual Perception), 자연어 지식(Natural-Language Knowledge)을 통합되면서도 구조화된 물리적 상호작용 모델로 결합하는 방법을 연구하는 분야이다. 피지컬 AI(Physical AI)에서 이 세 가지 모달리티(Modality)는 객체, 환경, 행동에 관한 서로 다른 종류의 증거를 제공한다. 비전(Vision)은 외형, 형상, 위치, 움직임, 가시적인 문맥을 설명한다. 촉각 센싱(Tactile Sensing)은 접촉, 압력, 질감(Texture), 미끄러짐(Slip), 순응성(Compliance), 온도, 지역 표면 기하(Local Surface Geometry)를 보여준다. 언어(Language)는 목표, 객체 개념, 작업 절차, 제약조건, 설명을 표현한다. 이들을 통합하면 로봇은 단순히 객체를 인식하는 수준을 넘어 해당 객체를 실제로 어떻게 다루어야 하는지를 이해할 수 있다.
+
+비전은 접촉 이전 단계에서 강력하다. 카메라는 컵을 식별하고, 대략적인 위치를 추정하고, 손잡이를 관찰하며, 주변 장애물을 감지할 수 있다. 그러나 로봇이 객체에 접근하거나 파지하면 시각 정보의 신뢰성이 낮아질 수 있다. 로봇 손이 카메라 시야를 가릴 수 있고, 투명하거나 반사성이 높은 표면은 깊이 추정을 방해하며, 실제 접촉 상태는 영상에서 보이지 않을 수 있다. 촉각 센싱은 로봇과 객체 사이의 상호작용에 관한 직접적인 정보를 제공하기 때문에 이 단계에서 특히 중요해진다.
+
+로봇은 시각적으로 상자를 식별하고 파지 계획(Grasp Plan)을 생성할 수 있지만, 손가락이 안정적으로 접촉했는지, 객체가 미끄러지고 있는지, 과도한 힘이 가해지고 있는지, 표면이 예상보다 부드러운지는 촉각 피드백을 통해서만 확인할 수 있다. 언어는 이러한 관측을 작업 의미와 연결한다. "깨지기 쉬운 용기를 부드럽게 잡아라"라는 명령은 로봇이 단단한 금속 부품을 들어 올리는 경우와는 다르게 촉각 압력과 순응성을 해석해야 함을 의미한다.
+
+촉각 센싱에는 다양한 기술과 신호 형식이 포함된다. 힘·토크 센서(Force and Torque Sensor)는 손목, 관절, 공구에서 발생하는 상호작용 힘을 측정한다. 압력 배열(Pressure Array)은 표면 전체의 접촉 분포를 측정한다. 정전용량형(Capacitive), 압저항형(Piezoresistive), 광학식(Optical), 자기식(Magnetic), 탄성체 기반(Elastomer-Based) 센서는 변형과 지역 압력을 추정한다. 비전 기반 촉각 센서(Vision-Based Tactile Sensor)는 내부 카메라를 사용하여 부드러운 접촉 표면의 변형을 관찰한다.
+
+촉각 센서의 출력은 하나의 스칼라 힘 값, 다차원 렌치(Wrench), 밀집 압력 지도(Dense Pressure Map), 이미지와 유사한 변형 패턴, 시간 시퀀스가 될 수 있다. 이러한 표현은 일반 RGB 이미지나 언어 토큰과 크게 다르다. 멀티모달 모델은 촉각 데이터의 물리적 의미를 유지하면서 공통 추론 인터페이스를 만들어야 한다.
+
+촉각 데이터는 매우 지역적(Local)이다. 카메라는 장면 전체를 관찰할 수 있지만, 촉각 센서는 일반적으로 현재 접촉하고 있는 작은 영역만 설명한다. 이러한 차이는 상호 보완적인 관계를 형성한다. 비전은 전역 문맥을 제공하고 접촉이 어디에서 발생할지를 예측한다. 촉각은 실제로 무엇이 발생했는지에 관한 정밀한 지역 증거를 제공한다.
+
+시각 관측과 촉각 관측 사이의 관계가 항상 직접적인 것은 아니다. 파지 이전에 보였던 객체 표면이 접촉 중에는 가려질 수 있다. 접촉 지점은 객체의 뒤쪽이나 아래쪽에 있을 수 있다. 따라서 촉각 센서는 이전에 명확하게 보이지 않았던 영역을 관측할 수 있다.
+
+교차 모달 표현 학습(Cross-Modal Representation Learning)은 접촉 신호를 객체 정체성(Object Identity), 추정된 표면, 그리퍼 자세(Gripper Pose), 행동 이력(Action History)과 연결해야 한다. 정확한 로봇 운동학과 좌표 변환은 촉각 관측을 시각 장면 또는 3차원 장면의 특정 위치와 연결하는 데 도움을 준다.
+
+시간 정렬(Temporal Alignment)도 필수적이다. 접촉력은 수 밀리초 안에 변할 수 있지만, 카메라는 일반적으로 초당 수십 프레임으로 동작한다. 촉각과 시각 스트림을 단순히 프레임 번호만으로 정렬하면 미끄러짐 이벤트를 잘못된 움직임이나 객체 자세와 연결할 수 있다.
+
+하드웨어 타임스탬프(Hardware Timestamp), 동기화된 제어 로그(Synchronized Control Log), 상대 시간 인코딩(Relative-Time Encoding), 보간(Interpolation)은 올바른 물리 관계를 학습하기 위해 필요하다. 고주파 촉각 신호는 지역 시간 인코더(Local Temporal Encoder)를 통해 처리한 뒤 멀티모달 추론을 위한 압축된 이벤트 토큰(Event Token)으로 요약할 수 있다.
+
+촉각 이벤트 토큰은 최초 접촉(First Contact), 압력 증가, 안정된 파지(Stable Grasp), 초기 미끄러짐(Incipient Slip), 완전한 미끄러짐(Full Slip), 충돌(Collision), 표면 전환(Surface Transition), 놓기(Release), 예상하지 못한 충격을 표현할 수 있다. 이러한 이벤트 수준 표현은 모든 원시 촉각 샘플을 대형 트랜스포머(Transformer) 컨텍스트에 직접 삽입하는 것보다 효율적이다.
+
+비전 인코더(Vision Encoder)는 일반적으로 이미지 패치, 객체 토큰, 깊이 특징, 3차원 장면 표현을 생성한다. 촉각 인코더(Tactile Encoder)는 촉각 이미지를 처리하는 합성곱 신경망(Convolutional Neural Network), 센서 시퀀스를 처리하는 시간 트랜스포머(Temporal Transformer), 연속 스트림을 위한 상태공간 모델(State Space Model), 로봇 손 전체에 분산된 센서를 처리하는 그래프 모델(Graph Model)을 사용할 수 있다.
+
+언어는 일반적으로 트랜스포머 기반 텍스트 인코더(Text Encoder)나 대규모 언어 모델(Large Language Model)로 인코딩된다. 언어 토큰은 객체 정체성, 재질, 예상되는 상호작용, 필요한 힘, 작업 단계, 안전 제약을 설명할 수 있다. 이후 교차 어텐션(Cross-Attention)은 언어를 시각 및 촉각 표현과 연결한다.
+
+"부드러운 객체를 변형시키지 않고 파지하라"라는 언어 쿼리(Language Query)는 시각 토큰에 주의를 기울여 목표 객체를 식별하고, 촉각 토큰에 주의를 기울여 변형과 압력을 모니터링할 수 있다. 모델은 객체가 무엇처럼 보이는지와 실제 접촉에서 어떻게 느껴지는지를 결합해야 한다.
+
+비전도 촉각 정보를 질의할 수 있다. 객체 표현은 최근 접촉 특징을 검색하여 재질, 안정성, 자세 추정을 갱신할 수 있다. 시각적으로 모호한 객체는 촉각 이후 더 정확하게 분류될 수 있다.
+
+촉각 토큰도 시각 정보를 질의할 수 있다. 압력 패턴이 모서리 접촉을 나타낼 수 있지만, 비전은 어떤 객체의 어느 모서리인지를 판단할 수 있다. 결합된 표현은 어느 하나의 모달리티만 사용할 때보다 더 많은 정보를 제공한다.
+
+양방향 교차 어텐션(Bidirectional Cross-Attention)은 모달리티가 서로를 정제하기 때문에 유용하다. 비전은 접촉 위치와 객체 기하를 예측한다. 촉각은 시각적 불확실성을 보정하고 실제 물리 상태를 확인한다. 언어는 두 모달리티의 작업 의존적 해석을 제공한다.
+
+예를 들어 동일한 촉각 압력이라도 명령에 따라 의미가 달라질 수 있다. 안정적인 산업용 파지에서는 힘을 증가시키는 것이 허용될 수 있다. 그러나 깨지기 쉬운 객체를 다루는 작업에서는 동일한 힘이 위험을 의미할 수 있다. 언어는 촉각 증거의 해석을 조건화한다.
+
+표현 학습은 공유 잠재 공간(Shared Latent Space)을 사용할 수 있다. 동일한 객체나 상호작용과 관련된 시각, 촉각, 언어 특징을 가까운 위치로 정렬한다. 고무를 만졌을 때 발생하는 촉각 패턴은 부드러움, 탄성(Elasticity), 높은 마찰과 관련된 시각 예제 및 언어 설명과 정렬되어야 한다.
+
+대조학습(Contrastive Learning)은 이러한 정렬을 지원할 수 있다. 서로 대응하는 시각-촉각-언어 관측은 양성 예제(Positive Example)로 취급하고, 관련 없는 조합은 음성 예제(Negative Example)로 취급한다. 모델은 거친 금속 표면이 매끄러운 직물이라는 언어 설명과 정렬되어서는 안 된다는 사실을 학습한다.
+
+그러나 대조학습은 지름길(Shortcut)을 활용할 수 있다. 특정 로봇 그리퍼, 배경, 센서 구성이 특정 재질이나 작업과 연결될 수 있다. 물리적으로 의미 있는 표현을 학습하려면 다양한 객체, 시점, 센서, 힘, 환경이 필요하다.
+
+교차 모달 예측(Cross-Modal Prediction)은 또 다른 학습 목표를 제공한다. 모델은 시각 외형과 계획된 행동으로부터 예상 촉각 피드백을 예측할 수 있다. 촉각 접촉과 로봇 상태로부터 객체 움직임을 예측할 수 있다. 시각과 촉각 증거로부터 표면의 언어 설명을 생성할 수도 있다.
+
+비전으로 촉각을 예측하면 로봇은 행동 이전에 예상 마찰, 경도, 접촉 특성을 추정할 수 있다. 그러나 시각 외형만으로 물리적 속성이 고유하게 결정되는 것은 아니다. 외형이 비슷한 두 객체라도 질량, 순응성, 표면 처리가 다를 수 있다.
+
+따라서 예측된 촉각 속성은 확인된 측정값이 아니라 사전 믿음(Prior Belief)으로 취급해야 한다. 실제 접촉 이후 촉각 정보가 이러한 믿음을 갱신한다.
+
+촉각과 행동 이력으로부터 시각 변화를 예측하면 모델은 접촉이 객체에 어떤 영향을 주는지를 학습할 수 있다. 횡방향 힘과 촉각 미끄러짐이 함께 발생하면 객체가 이동할 가능성을 예측할 수 있다. 여러 손가락에서 안정된 압력이 유지되면 안정적인 파지를 나타낼 수 있다.
+
+촉각 정보로부터 언어를 생성하면 설명 가능성(Explainability)을 지원할 수 있다. 로봇은 객체가 예상보다 부드럽게 느껴진다거나, 파지가 불안정하다거나, 예상보다 일찍 접촉이 발생했다고 보고할 수 있다. 이러한 설명은 작업자가 물리적 실패를 이해하는 데 도움을 준다.
+
+그러나 이러한 설명의 품질은 접지(Grounding)에 의존한다. 언어 모델은 센서 증거가 약한데도 그럴듯한 촉각 설명을 생성할 수 있다. 따라서 모든 촉각 관련 주장은 측정 가능한 신호, 신뢰도, 접촉 위치에 연결되어야 한다.
+
+촉각-비전-언어 표현은 재질 이해(Material Understanding)에 특히 중요하다. 비전은 객체가 금속, 플라스틱, 직물, 목재, 고무, 유리처럼 보이는지를 추정할 수 있지만, 촉각은 질감, 강성(Stiffness), 마찰, 온도, 변형 가능성에 관한 증거를 제공한다.
+
+재질 속성은 파지 계획과 제어에 영향을 준다. 매끄러운 객체는 더 큰 수직력(Normal Force)이나 다른 접촉 전략이 필요할 수 있다. 부드러운 객체는 더 작은 힘과 더 넓은 접촉 면적이 필요할 수 있다. 깨지기 쉬운 객체는 신중한 가속과 진동 제어를 요구할 수 있다.
+
+멀티모달 모델은 이러한 속성을 고정 라벨이 아니라 확률적 속성(Probabilistic Attribute)으로 표현할 수 있다. 로봇은 객체가 단단할 가능성이 높다고 믿고 있다가 실제 변형이 감지되면 추정값을 갱신할 수 있다.
+
+미끄러짐 감지(Slip Detection)는 가장 중요한 촉각 작업 가운데 하나이다. 미끄러짐은 압력, 진동, 전단력(Shear Force), 비전 기반 촉각 센서 내부의 마커 움직임이 빠르게 변화하는 형태로 나타날 수 있다. 시각 움직임도 객체가 그리퍼에 대해 상대적으로 이동하고 있음을 보여줄 수 있다.
+
+비전과 촉각을 결합하면 신뢰성이 향상된다. 촉각 센싱은 큰 시각적 움직임이 발생하기 전에 초기 미끄러짐을 감지할 수 있고, 비전은 전역적인 움직임의 방향과 결과를 확인할 수 있다.
+
+미끄러짐 인식 언어 조건부 정책(Slip-Aware Language-Conditioned Policy)은 작업 문맥에 따라 다르게 반응할 수 있다. 파지력을 증가시키거나, 손가락 위치를 바꾸거나, 움직임을 늦추거나, 객체를 내려놓거나, 도움을 요청할 수 있다.
+
+접촉 위치 추정(Contact Localization)도 핵심 능력이다. 시스템은 로봇이 객체의 어느 부분을 접촉했는지, 로봇의 어떤 표면이 접촉에 참여했는지를 식별해야 한다. 촉각 배열은 지역 좌표를 제공하고, 운동학은 이를 로봇 좌표계나 월드 좌표계로 변환한다.
+
+시각 및 3차원 장면 모델은 접촉을 객체 표면과 연결할 수 있다. 이는 삽입(Insertion), 표면 추종(Surface Following), 모서리 추적(Edge Tracing), 결함 검사(Defect Inspection)와 같은 작업을 지원한다.
+
+객체 자세 추정(Pose Estimation)도 촉각 피드백을 통해 개선할 수 있다. 비전이 대략적인 객체 자세를 제공하면, 접촉은 그리퍼와 객체 사이의 정확한 관계를 알려준다. 여러 번의 접촉을 이용하면 촉각 서보잉(Tactile Servoing)을 통해 자세를 정제할 수 있다.
+
+촉각 서보잉은 접촉 정보를 사용하여 움직임을 연속적으로 조정한다. 삽입 작업에서는 비대칭 압력을 감지하여 정렬을 보정할 수 있다. 표면 추종에서는 원하는 접촉력을 유지하면서 지역 기하 변화에 적응한다.
+
+언어는 원하는 상호작용 모드(Interaction Mode)를 지정할 수 있다. "완전히 장착될 때까지 삽입하라", "이음선을 따라가라", "표면에 가볍게 누르라"와 같은 명령은 서로 다른 촉각 목표를 정의한다.
+
+따라서 표현은 관측된 접촉뿐 아니라 목표 접촉(Desired Contact)도 포함해야 한다. 목표 힘, 허용 가능한 변형, 접촉 영역, 예상 지속 시간, 작업 단계를 언어 조건부 제어 문맥으로 인코딩할 수 있다.
+
+어포던스 이해(Affordance Understanding)도 멀티모달 표현의 도움을 받는다. 비전은 손잡이, 버튼, 케이블, 직물 가장자리, 뚜껑을 식별할 수 있다. 촉각은 해당 부품이 움직이는지, 딸깍거리는지, 휘어지는지, 힘에 저항하는지를 판단할 수 있다.
+
+언어는 당기기, 누르기, 돌리기, 밀기, 접기, 삽입하기와 같은 의도된 어포던스를 설명한다. 모델은 보이는 부품을 행동에서 예상되는 촉각 반응과 연결해야 한다.
+
+어포던스는 고정된 객체 속성이 아니다. 로봇 몸체, 공구, 방향, 힘, 작업에 따라 달라진다. 하나의 손잡이는 특정 그리퍼로는 잡을 수 있지만 다른 그리퍼로는 잡기 어려울 수 있다. 버튼도 특정 방향에서만 누를 수 있을 수 있다.
+
+따라서 체화 정보(Embodiment Information)가 포함되어야 한다. 로봇 손 형상, 손가락 구성, 센서 위치, 관절 한계, 공구 유형, 힘 생성 능력이 해석과 행동에 영향을 준다.
+
+교차 체화 학습(Cross-Embodiment Learning)은 서로 다른 로봇 손이 서로 다른 촉각 신호를 생성하기 때문에 어렵다. 2지 그리퍼(Two-Finger Gripper), 인간형 손(Anthropomorphic Hand), 흡착 도구(Suction Tool), 촉각 프로브(Tactile Probe)는 동일한 센서 배치나 접촉 역학을 공유하지 않는다.
+
+형태 인식 인코딩(Morphology-Aware Encoding)은 센서 위치, 손가락 ID, 링크 구조, 접촉 좌표계, 사용 가능한 행동 공간을 설명할 수 있다. 이후 공유 모델은 안정적 접촉이나 미끄러짐과 같은 상위 개념을 학습하고, 원시 신호 처리에는 로봇별 어댑터(Robot-Specific Adapter)를 사용할 수 있다.
+
+객체 중심 메모리(Object-Centric Memory)는 촉각 경험을 보존할 수 있다. 객체를 만진 뒤 로봇은 추정 재질, 마찰, 강성, 파지 품질, 성공적인 접촉 영역을 저장할 수 있다. 이후 상호작용에서 이 정보를 검색할 수 있다.
+
+이는 반복적인 산업 작업에서 유용하다. 로봇은 특정 부품이 시각적 외형보다 더 미끄럽다는 사실이나, 특정 파지점이 불안정한 접촉을 만든다는 사실을 학습할 수 있다.
+
+메모리는 관측이 이루어진 문맥도 포함해야 한다. 마찰은 표면 오염, 온도, 습도, 공구 상태, 객체 방향에 따라 달라질 수 있다. 저장된 촉각 경험을 모든 상황에 항상 유효한 정보로 취급해서는 안 된다.
+
+디지털 트윈(Digital Twin)도 촉각 정보로 확장할 수 있다. 부품 모델은 예상 강성, 접촉 영역, 삽입력(Insertion Force), 체결 토크(Fastening Torque)를 포함할 수 있다. 실시간 촉각 관측을 이러한 기준값(Nominal Value)과 비교할 수 있다.
+
+예상 접촉과 측정 접촉 사이의 차이는 정렬 불량, 마모, 장애물, 손상, 잘못된 조립을 의미할 수 있다. 멀티모달 모델은 이러한 차이를 설명하고 추가 검사를 권고할 수 있다.
+
+촉각 데이터는 이상 탐지(Anomaly Detection)에도 유용하다. 예상하지 못한 힘의 급증, 비대칭 압력, 비정상 진동, 반복적인 미끄러짐은 비전에서 정상으로 보여도 문제를 나타낼 수 있다.
+
+비전은 이상이 객체, 로봇, 환경 중 어디에서 발생하는지를 판단하는 데 도움을 준다. 언어는 이러한 패턴을 진단 절차와 유지보수 지식에 연결한다.
+
+로봇이 커넥터를 삽입할 때 정상보다 높은 저항을 감지할 수 있다. 시각 검사에서는 명확한 장애물이 보이지 않을 수 있다. 시스템은 작업을 정지하고, 후퇴하고, 정렬을 다시 검사한 뒤 비정상적인 삽입력 프로파일을 보고할 수 있다.
+
+이러한 결정은 대형 생성 모델에만 의존해서는 안 된다. 결정론적 힘 제한(Deterministic Force Limit), 충돌 임계값(Collision Threshold), 비상 후퇴 행동(Emergency Withdrawal Behavior)은 독립적으로 계속 활성화되어야 한다.
+
+촉각-비전-언어 모델은 계층형 제어 아키텍처(Layered Control Architecture) 안에서 동작해야 한다. 파운데이션 모델은 작업을 해석하고, 객체 속성을 추정하며, 접촉 상태를 식별하고, 행동을 제안한다. 저수준 제어기(Low-Level Controller)는 힘, 위치, 속도, 임피던스(Impedance)를 제어한다.
+
+안전 시스템은 최대 힘, 관절 한계, 속도, 작업 공간, 충돌 제약을 강제한다. 멀티모달 모델은 문맥을 제공하지만 검증된 제어 및 보호 메커니즘을 대체하지 않는다.
+
+데이터 수집은 주요 과제이다. 고품질 학습 데이터에는 동기화된 이미지, 촉각 측정값, 로봇 상태, 행동, 언어 설명, 객체 정체성, 접촉 위치, 작업 결과가 포함되어야 한다.
+
+촉각 이벤트의 수작업 주석은 비용이 많이 든다. 접촉 라벨은 전문가의 해석이 필요할 수 있고, 중요한 상태는 매우 짧게 발생한다. 자동 라벨은 힘 임계값, 객체 움직임, 제어 상태, 시뮬레이션으로부터 만들 수 있지만 완벽하지 않을 수 있다.
+
+로봇 시연(Robot Demonstration)은 가치 있는 멀티모달 시퀀스를 제공한다. 원격조작(Teleoperation)이나 운동감각적 가르침(Kinesthetic Teaching)은 언어 명령, 시각 장면, 촉각 피드백, 성공적인 행동을 연결할 수 있다. 실패 시연도 미끄러짐, 충돌, 과도한 힘, 복구 행동을 보여주기 때문에 중요하다.
+
+시뮬레이션은 정확한 접촉 라벨, 힘, 자세, 재질 파라미터를 생성할 수 있다. 객체, 마찰, 강성, 행동을 대규모로 변화시킬 수 있다. 그러나 사실적인 촉각 시뮬레이션은 여전히 어렵다.
+
+실제 센서는 변형, 히스테리시스(Hysteresis), 온도 영향, 마모, 드리프트(Drift), 전자 노이즈, 제조 편차를 포함한다. 접촉 역학도 단순화된 시뮬레이션과 다를 수 있다. 따라서 시뮬레이션-현실 전이(Sim-to-Real Transfer)를 위해서는 도메인 랜덤화(Domain Randomization)와 실제 데이터 기반 적응이 필요하다.
+
+자기지도 학습(Self-Supervised Learning)은 주석 요구량을 줄일 수 있다. 모델은 미래 촉각 신호를 예측하고, 마스킹된 접촉 영역을 복원하며, 촉각을 시각적 움직임과 정렬하고, 동기화된 상호작용 시퀀스와 불일치 시퀀스를 구분할 수 있다.
+
+촉각 데이터는 행동의 물리적 결과를 기록하기 때문에 자연스러운 학습 신호를 제공한다. 로봇은 예측된 접촉과 실제 관측된 접촉을 비교하여 내부 모델을 개선할 수 있다.
+
+불확실성(Uncertainty)은 명시적으로 표현되어야 한다. 촉각 센서는 포화(Saturation), 드리프트, 보정 손실, 모호한 신호를 겪을 수 있다. 시각 관측은 가려질 수 있다. 언어 명령은 불명확할 수 있다.
+
+융합 시스템은 센서 상태, 보정 신뢰도, 관측 나이(Observation Age), 작업 위험을 고려해야 한다. 촉각 증거가 신뢰할 수 없으면 로봇은 힘을 줄이고, 더 천천히 움직이거나, 추가 접촉을 수행할 수 있다.
+
+능동적 촉각(Active Touch)은 능동적 인식(Active Perception)의 중요한 형태이다. 로봇은 정보를 얻기 위해 의도적으로 두드리기, 압착하기, 미끄러뜨리기, 누르기, 회전시키기를 수행할 수 있다. 선택된 행동은 안전 제약을 지키면서 유용한 정보를 최대화해야 한다.
+
+가벼운 두드림은 강성을 추정할 수 있다. 제어된 압착은 순응성을 추정할 수 있다. 미끄럼 접촉은 질감과 마찰을 알려준다. 작은 탐색 움직임은 부품이 느슨한지를 판단하는 데 도움을 줄 수 있다.
+
+언어는 능동적 촉각을 안내할 수 있다. 포장이 비어 있는지, 부드러운지, 밀봉되었는지, 단단히 고정되어 있는지를 판단하라는 명령은 서로 다른 탐색 행동을 요구한다.
+
+모델은 정보 획득량(Information Gain)과 작업 비용 및 위험 사이의 균형을 맞춰야 한다. 과도한 탐색은 깨지기 쉬운 객체를 손상시키거나 생산 속도를 늦출 수 있다. 월드 모델(World Model)과 불확실성 추정은 효율적인 센싱 행동을 선택하는 데 도움을 줄 수 있다.
+
+평가는 분류 정확도만 측정해서는 안 된다. 중요한 지표에는 접촉 감지(Contact Detection), 미끄러짐 예측, 재질 인식, 힘 추정, 자세 정제, 파지 안정성, 삽입 성공률, 촉각 접지, 불확실성 보정, 복구 성능이 포함된다.
+
+모달리티 제거 실험(Modality Ablation)은 모델이 비전, 촉각, 언어를 실제로 의미 있게 사용하는지를 판단할 수 있다. 접촉이 중요한 작업에서 촉각 입력을 제거해도 성능이 변하지 않는다면 모델은 시각적 지름길에 의존하고 있을 수 있다.
+
+반사실적 시험(Counterfactual Test)은 촉각 신호, 객체 외형, 명령을 변경할 수 있다. 객체가 더 부드러워지거나, 미끄러짐이 시작되거나, 명령이 단단한 파지에서 부드러운 취급으로 바뀌면 모델은 서로 다르게 반응해야 한다.
+
+촉각 예측은 제어에 영향을 주고, 제어는 이후 접촉을 변화시키기 때문에 폐루프 평가(Closed-Loop Evaluation)가 필수적이다. 작은 오류가 불안정한 힘 피드백이나 반복적인 미끄러짐을 만들 수 있다.
+
+실제 로봇 시험은 학습하지 않은 객체, 변화하는 마찰, 센서 노이즈, 가림, 불완전한 보정, 가변 적재물을 포함해야 한다. 조건이 학습 분포를 벗어나면 시스템은 신뢰도를 낮추고 안전한 행동으로 전환해야 한다.
+
+효율적인 배포도 중요하다. 고주파 촉각 스트림을 대규모 언어 모델이 계속 직접 처리할 수는 없다. 지역 인코더는 원시 신호를 접촉 상태, 이벤트, 잠재 요약(Latent Summary)으로 압축해야 한다.
+
+계층형 설계는 밀리초 수준 반응을 위한 빠른 촉각 제어기, 파지 및 조작 상태를 위한 중간 속도의 멀티모달 모델, 추론·계획·설명을 위한 느린 언어 모델로 구성할 수 있다.
+
+이러한 분리는 실시간 제어를 유지하면서 파운데이션 모델의 지능을 활용하게 한다. 언어 모델이 모든 힘 제어 갱신에 직접 참여할 필요는 없다.
+
+촉각-비전-언어 표현의 장기적인 목표는 로봇이 객체를 어떻게 보이는지뿐 아니라 어떻게 느껴지고 어떻게 다루어야 하는지를 이해하도록 만드는 것이다.
+
+이러한 로봇은 보이는 형상과 접촉 기하를 연결하고, 촉각 신호를 재질 속성과 연결하며, 언어를 작업 의도와 연결하고, 행동을 물리적 결과와 연결해야 한다.
+
+비전은 사전 예측(Anticipation)을 제공하고, 촉각은 확인(Confirmation)을 제공하며, 언어는 의미적·절차적 문맥을 제공한다. 이들을 결합하면 외형만으로는 물리적 속성을 판단할 수 없는 객체와도 강건하게 상호작용할 수 있다.
+
+신뢰할 수 있는 피지컬 AI 아키텍처는 특화된 시각 및 촉각 인코더, 동기화된 시간 처리, 좌표계 정렬(Coordinate-Frame Alignment), 교차 어텐션, 불확실성 인식 융합(Uncertainty-Aware Fusion), 체화 모델(Embodiment Model), 외부 메모리, 결정론적 힘 제어, 독립적인 안전 시스템을 결합할 것이다.
+
+이러한 아키텍처 안에서 촉각-비전-언어 표현은 인식과 물리적 상호작용을 연결하는 다리가 된다. 분리된 시각, 접촉, 언어 신호를 객체가 무엇인지, 어떤 방식으로 접촉되고 있는지, 어떻게 반응하고 있는지, 로봇이 다음에 무엇을 해야 하는지에 대한 접지된 이해(Grounded Understanding)로 변환한다.
+
+##  
+
+## 3.7 Proprioception Visual Fusion for Physical AI [w/Code]
+
+![](images/image7.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+Proprioception-visual fusion is the process of combining a robot's internal physical-state information with visual observations of the surrounding environment. This capability is fundamental to Physical AI because a robot cannot act reliably by seeing the external world alone. It must also understand the position of its joints, the motion of its body, the orientation of its mobile base, the state of its actuators, and the relationship between its current configuration and the objects it observes. Vision describes what exists around the robot, while proprioception describes the robot's own body and motion within that environment. Their integration creates an embodied representation that connects perception with physically executable action.
+
+Proprioception refers to the sensing of a robot's internal state. Depending on the robot platform, proprioceptive signals may include joint positions, joint velocities, motor currents, actuator torques, wheel speeds, steering angles, inertial measurements, base orientation, gripper opening, end-effector pose, contact estimates, battery condition, and mechanical load. These measurements allow the robot to estimate its posture, movement, balance, and control condition without relying entirely on external sensors.
+
+The concept is similar to biological proprioception. Humans can estimate the location and motion of their arms and legs without continuously looking at them. A person can reach toward an object while maintaining an internal awareness of the hand's approximate position. A robot requires a comparable internal representation to coordinate its sensors, actuators, and physical actions.
+
+Vision provides information that proprioception cannot supply. Cameras reveal objects, people, obstacles, free space, target locations, surface appearance, and environmental motion. Depth cameras, stereo systems, and visual reconstruction can provide additional geometric information. However, vision alone does not indicate whether an observed target is reachable, whether the robot is already moving toward it, whether the current joint configuration permits the required approach, or whether the body is mechanically stable.
+
+An object may appear close in an image while remaining outside the manipulator's reachable workspace. A clear path may be visually detected while the mobile base is turning too quickly to follow it safely. A grasp point may be visible, but the wrist orientation or joint limits may prevent the planned motion. Proprioception-visual fusion resolves these ambiguities by relating external observations to the robot's current physical configuration.
+
+The two modalities have substantially different structures. Visual input is high-dimensional, spatially dense, and relatively slow. Proprioceptive input is usually lower-dimensional, temporally precise, and directly connected to control. A camera may provide tens of frames per second, while joint encoders and inertial sensors may update hundreds or thousands of times per second.
+
+A multimodal architecture should therefore use specialized encoders for each modality. Visual information may be processed by convolutional neural networks, Vision Transformers, video encoders, or object-centric models. Proprioceptive data may be processed by multilayer perceptrons, temporal transformers, recurrent networks, state space models, or graph neural networks representing the robot's kinematic structure.
+
+The visual encoder may produce image-patch tokens, object tokens, depth features, motion features, or three-dimensional scene representations. The proprioceptive encoder may produce tokens corresponding to individual joints, robot links, actuators, wheels, the mobile base, the end effector, or a compressed whole-body state.
+
+Fusion can occur at several stages. Early fusion combines visual and proprioceptive features near the input. This enables direct interaction, but the large number of visual tokens may dominate the smaller state representation. Late fusion processes each modality independently and combines the results near the output. This is modular and easier to validate, but it may miss detailed relationships between the observed environment and the robot's body.
+
+Intermediate fusion is often more suitable for Physical AI. Each modality is first processed by an appropriate encoder, after which cross-attention, gating, shared latent tokens, or multimodal transformer layers connect the compact representations. This approach preserves modality-specific structure while allowing task-relevant interaction.
+
+Cross-attention enables one modality to selectively retrieve information from another. A visual object token may query robot-state tokens to determine whether the object is reachable. An action query may attend simultaneously to target geometry and current joint configuration. A mobile-base token may retrieve obstacle or path-boundary information from visual observations.
+
+The reverse direction is also useful. Proprioceptive tokens can query visual representations. An end-effector token may attend to the object near the gripper. A wheel-state token may attend to terrain or road boundaries. A camera-pose token may retrieve the image region corresponding to the current viewing direction.
+
+Bidirectional fusion makes visual features embodiment-aware and proprioceptive features environment-aware. The same visual scene may imply different actions under different robot configurations. A cup on a table may be reachable when the arm is in a neutral configuration but unreachable when the shoulder is near a joint limit. Although the image has not changed, the physically feasible action set has changed.
+
+Coordinate alignment is a fundamental requirement. Visual observations may be expressed in image, camera, depth-sensor, or world coordinates. Proprioceptive information may be expressed in joint space, robot-base coordinates, link-local frames, or end-effector coordinates.
+
+Forward kinematics converts joint positions into robot-link and end-effector poses. Camera calibration connects image observations with the robot frame. Depth estimation or three-dimensional reconstruction provides metric positions for visually observed targets. Without accurate transformations, a model may associate an object with the wrong robot link or misinterpret movement.
+
+Coordinate-frame identity should therefore be represented explicitly. A position is meaningful only when its reference frame is known. Transformation confidence and calibration uncertainty should also be included because small errors can produce significant motion errors near contact.
+
+Camera pose is frequently determined by proprioception. A wrist-mounted camera moves with the manipulator, while a head-mounted camera changes orientation with the robot's neck or body. A stationary object may move across the image simply because the camera is moving.
+
+Egomotion-aware fusion uses joint state, base motion, and camera extrinsics to distinguish sensor motion from environmental motion. This capability is necessary for visual tracking, scene reconstruction, visual servoing, and world modeling.
+
+For a wrist camera, the model should receive the arm configuration and camera pose associated with every frame. Otherwise, it may incorrectly conclude that an object moved when only the camera changed position.
+
+Temporal alignment is equally important. Proprioceptive measurements usually update much faster than camera frames. Visual observations also contain exposure, transmission, and preprocessing delays. If an old image is combined with the latest joint state without accounting for time, the model may construct an inconsistent physical situation.
+
+Hardware timestamps, clock synchronization, interpolation, observation-age encoding, and motion compensation help align the streams. Visual features should be associated with the robot state at the image-exposure time rather than the time at which processing is completed.
+
+Proprioceptive history is often more useful than a single measurement. Velocity, acceleration, oscillation, actuator load, and motion intent are temporal properties. State space models or temporal encoders can compress recent body motion into a useful representation.
+
+Visual history is also needed to estimate object movement, optical flow, interaction progress, and environmental change. Effective fusion therefore connects temporal representations rather than relying only on isolated images and state vectors.
+
+For mobile robots, proprioception-visual fusion supports odometry, localization, navigation, and terrain adaptation. Wheel encoders and inertial sensors provide rapid motion estimates, while vision provides landmarks, object motion, and scene structure.
+
+Wheel odometry may fail because of slip, while visual odometry may fail under low texture, darkness, glare, or rapid motion. Combining these signals produces a more reliable estimate than either modality alone.
+
+An inertial measurement unit provides high-frequency acceleration and rotation information. Vision supplies slower but globally informative corrections. This principle forms the basis of visual-inertial odometry and visual-inertial simultaneous localization and mapping.
+
+On uneven terrain, vision can identify slopes, steps, loose surfaces, or obstacles. Proprioception reveals wheel slip, body vibration, pitch, roll, and motor load. Together, they support terrain understanding and adaptive motion.
+
+A surface that appears visually safe may produce excessive slip or vibration. The robot can update its terrain estimate using proprioceptive evidence and adjust speed, steering, suspension, or route selection.
+
+For legged robots, fusion is particularly important. Vision predicts footholds, terrain height, gaps, stairs, and obstacles. Proprioception describes body orientation, joint configuration, gait phase, balance, and contact state.
+
+The usefulness of a foothold depends on the current position of the leg, the center of mass, and the locomotion phase. A multimodal policy must therefore combine visual terrain features with the robot's dynamic body state.
+
+High-frequency stabilization should remain in a fast local controller. A foundation model may provide terrain-conditioned goals, gait selection, or recovery strategies, but it should not replace validated balance and motor-control loops.
+
+For robotic manipulators, proprioception-visual fusion supports reaching, grasping, insertion, visual servoing, and object tracking. Vision identifies the target and estimates its pose, while proprioception determines the current arm, wrist, and gripper configuration.
+
+The relative transformation between the end effector and the target is often more useful than the target's absolute position. Control policies can use this relative representation to generate coordinated motion.
+
+Visual servoing continuously reduces the difference between a desired visual state and the observed state. Proprioception allows the controller to map visual error into physically meaningful joint or end-effector commands.
+
+During reaching, the fused model can consider visual targets, joint limits, self-collision, and obstacle geometry. During grasping, it can estimate whether the gripper is aligned and whether the finger opening is appropriate.
+
+Occlusion becomes important near contact. The robot hand may block the target from the camera. Proprioception maintains the gripper pose, while memory and tracking preserve an estimate of the target state.
+
+However, proprioception describes only the robot's motion, not the complete response of the object. An object may move after contact, requiring updated vision, force sensing, or tactile feedback. Proprioception-visual fusion should therefore remain part of a larger multimodal architecture.
+
+Language can be added to form a vision-proprioception-language model. Language provides goals such as "reach behind the box," "move slowly near the person," or "keep the camera facing the control panel."
+
+The same visual scene and body state may require different behavior depending on the instruction. Language determines which object, robot link, motion constraint, or safety condition is currently relevant.
+
+An action decoder can use future-action queries that attend to visual features, proprioceptive state, and language instructions. The resulting action sequence is conditioned on the goal, environment, and current embodiment.
+
+Embodiment representation is central to this process. A fixed list of joint values is not sufficient for general robot learning. Each joint token may include joint identity, parent and child links, axis, limits, actuator type, sensor location, and control capability.
+
+Graph-based representations can encode the robot as a kinematic structure. Visual objects can attend to relevant robot links or end effectors. An action involving the left arm should emphasize the left-arm joints and the geometry surrounding that arm.
+
+Morphology-aware representations also support cross-embodiment learning. Different robots have different numbers of joints, link lengths, wheel arrangements, sensors, and action spaces. A state vector designed for one platform does not transfer naturally to another.
+
+A shared model can process structured robot descriptions while using embodiment-specific adapters. Shared layers learn general concepts such as reachability, visual targeting, balance, collision avoidance, and body-environment relationships. Adapters translate those concepts into platform-specific actions.
+
+Tool changes also modify the relationship between vision and proprioception. A gripper, probe, camera boom, suction tool, or welding device has different geometry and capabilities. The active tool configuration must therefore be included in the state representation.
+
+A visible target may be reachable using a long inspection probe but unreachable with a short gripper. The model must condition geometric reasoning on the current tool's dimensions, orientation, and operating constraints.
+
+Proprioception can help detect visual errors. If a vision system predicts that the robot is stationary while wheel encoders and inertial sensors indicate motion, the observations are inconsistent. Similarly, if a visual tracker reports leftward end-effector motion while kinematics predicts rightward motion, synchronization, calibration, or tracking may be incorrect.
+
+Cross-modal consistency checking is therefore valuable for diagnosis and safety. The model can compare predicted visual change with measured robot motion and identify unexpected disagreement.
+
+A world model can predict future visual observations from the current scene, proprioceptive state, and planned action. Differences between prediction and reality may indicate object movement, collision, wheel slip, actuator failure, or perception error.
+
+Self-supervised learning can use these relationships without requiring extensive manual labels. A model may predict future images from state and action, estimate state changes from observed motion, reconstruct missing measurements, or determine whether visual and proprioceptive streams are synchronized.
+
+Contrastive learning can align visual observations with corresponding body states or action sequences. Matching observations and states are brought closer in latent space, while mismatched combinations are separated.
+
+However, simple visual-state alignment may be ambiguous because several body configurations can observe similar scenes. Object-conditioned and action-conditioned objectives are more informative. The model may align the visible gripper pose with forward kinematics or align observed motion with the executed action.
+
+The fused representation should preserve both shared and modality-specific information. Vision contains object identity, color, texture, and scene context that proprioception cannot provide. Proprioception contains internal actuator and joint information that may be invisible to cameras.
+
+A useful architecture therefore maintains a common embodied-scene representation while preserving private visual and proprioceptive features. Shared features describe relationships between the robot and the environment. Private features retain detailed appearance or actuator dynamics.
+
+Uncertainty-aware fusion is necessary. Vision may become unreliable because of blur, darkness, glare, occlusion, or reflective objects. Proprioception may become unreliable because of encoder faults, backlash, wheel slip, thermal drift, or calibration error.
+
+Each modality should include confidence, timestamp, estimated noise, and sensor-health information. Gating mechanisms can adjust their contribution dynamically.
+
+In darkness, the system may rely more strongly on proprioception and stored maps. During wheel slip, it should reduce reliance on wheel odometry and increase reliance on visual motion. During temporary occlusion, it may use kinematic prediction and memory.
+
+Agreement between modalities can increase confidence, but correlated errors remain possible. Incorrect camera calibration can make both visual and proprioceptive interpretations appear mutually consistent while still being wrong. Independent validation and redundant sensing remain necessary.
+
+Missing modalities should be represented explicitly. A failed camera, missing encoder, or delayed inertial packet should not be replaced with an ordinary zero vector that the model could misinterpret as a valid measurement.
+
+Modality dropout during training improves robustness. The model learns to operate with partial information while lowering confidence, slowing motion, or requesting additional sensing.
+
+Proprioception-visual fusion also supports anomaly detection. Unexpected current, torque, joint error, vibration, or slip can be interpreted in relation to the visual scene and the current task.
+
+High motor current may be normal while climbing a visible slope but abnormal on a flat floor. Unexpected manipulator torque near an object may indicate early contact or collision. Vision helps identify the likely physical source.
+
+Language and maintenance knowledge can convert these measurements into diagnostic explanations. The robot may report that resistance occurred earlier than expected or that wheel slip was detected on a visually wet surface.
+
+Such explanations must remain grounded in measured telemetry. A generative model should not invent faults or causes unsupported by the sensor evidence.
+
+Object-centric memory can store relationships between visual entities and previous robot configurations. A robot may remember that a route produced slip, that a shelf was difficult to reach from a particular base position, or that a camera viewpoint caused severe occlusion.
+
+This experience supports future planning. When facing a similar task, the robot can retrieve earlier body states, actions, and outcomes.
+
+Stored experience should include robot type, tool, payload, environment, calibration version, and sensor conditions. A successful configuration for one robot may not transfer directly to another.
+
+Digital twins can provide expected kinematic, geometric, and operational information. Live visual and proprioceptive data can be compared with nominal robot and environment states.
+
+Differences may indicate moved equipment, incorrect tool attachment, joint-calibration error, deformation, or map changes. The model should retain both observed and nominal information rather than forcing them to agree.
+
+Training data should include synchronized images, robot state, actions, calibration parameters, task descriptions, and outcomes. Accurate temporal and geometric alignment is often more important than raw data volume.
+
+Robot demonstrations provide useful examples linking perception, internal state, and successful action. Failed demonstrations are equally valuable because they contain collisions, unreachable targets, wheel slip, joint-limit violations, and recovery behavior.
+
+Simulation can generate exact robot states, object poses, camera transforms, and actions across many embodiments and environments. However, real systems contain sensor noise, actuator delays, backlash, vibration, motion blur, and calibration imperfections that may be absent from simulation.
+
+Domain randomization, sensor-noise modeling, and real-world fine-tuning are therefore necessary for effective transfer.
+
+Evaluation should measure more than offline prediction accuracy. Relevant metrics include visual-servoing error, reachability prediction, target-pose accuracy, localization drift, trajectory success, terrain classification, slip detection, and closed-loop task completion.
+
+Modality-ablation tests reveal whether both streams are used meaningfully. If removing joint state has little effect on reaching, the model may be memorizing visual patterns. If removing vision does not affect obstacle-rich navigation, the policy may be overfitting to previously observed trajectories.
+
+Counterfactual tests can change the robot configuration while keeping the scene fixed. The predicted action should change when a joint approaches its limit or when the base orientation changes.
+
+The visual scene can also be modified while maintaining the same body state. Moving an obstacle or target should produce a consistent change in the planned action.
+
+Closed-loop testing is essential because every action changes both vision and proprioception. Small prediction errors can accumulate into drift, oscillation, instability, or collision.
+
+Real-robot evaluation should include unknown environments, camera disturbance, encoder noise, changing payload, moving obstacles, and calibration variation. The system should reduce confidence and transition to safe behavior when observations become inconsistent.
+
+Efficient deployment requires hierarchical processing. High-frequency joint and inertial signals should be handled by local estimators and controllers. Visual processing can operate at a lower rate, while a larger multimodal foundation model consumes compressed visual and body-state tokens.
+
+The reasoning model does not require every raw encoder sample. It may receive summaries such as current pose, velocity, joint-limit margin, reachability, slip probability, motion phase, and uncertainty.
+
+This design preserves responsiveness and reduces computational load. Hard real-time control remains separated from slower semantic reasoning.
+
+Deterministic safety systems must retain final authority. Joint limits, collision prevention, speed restrictions, stability control, actuator protection, and emergency stopping cannot depend only on a learned fusion model.
+
+The foundation model may interpret context and propose actions, but validated planners and controllers must verify physical feasibility before execution.
+
+The long-term goal of proprioception-visual fusion is to provide Physical AI systems with a coherent understanding of both the external environment and their own bodies within it.
+
+Such a robot should understand not only where an object appears but whether it can reach the object, how its current motion affects perception, which body part should act, and how the environment may change in response.
+
+Vision provides external evidence, while proprioception provides embodied state. Their fusion connects seeing with acting.
+
+A reliable Physical AI architecture will combine specialized visual and proprioceptive encoders, synchronized temporal processing, explicit coordinate transformations, morphology-aware representation, cross-attention, uncertainty-aware fusion, external memory, deterministic control, and independent safety mechanisms.
+
+Within this architecture, proprioception-visual fusion becomes the bridge between environmental perception and embodied action. It transforms camera observations and internal robot signals into a grounded understanding of where the robot is, what surrounds it, which actions are physically possible, and what the robot should do next.
+
+고유감각-시각 융합(Proprioception-Visual Fusion)은 로봇의 내부 물리 상태 정보와 주변 환경에 대한 시각 관측을 결합하는 과정이다. 이러한 능력은 피지컬 AI(Physical AI)의 핵심 기반이다. 로봇은 외부 세계를 바라보는 것만으로는 신뢰성 있게 행동할 수 없기 때문이다. 로봇은 자신의 관절이 어디에 있는지, 몸체가 어떻게 움직이고 있는지, 이동 베이스가 어떤 방향을 향하고 있는지, 액추에이터(Actuator)가 어떤 상태인지, 현재 몸체 구성이 관측된 객체와 어떤 관계를 가지는지를 함께 이해해야 한다. 비전(Vision)은 로봇 주변에 무엇이 존재하는지를 설명하고, 고유감각(Proprioception)은 환경 안에서 로봇 자신의 몸체와 움직임을 설명한다. 두 정보를 통합하면 인식을 실제로 실행 가능한 물리 행동과 연결하는 체화 표현(Embodied Representation)을 만들 수 있다.
+
+고유감각은 로봇 내부 상태를 감지하는 것을 의미한다. 로봇 플랫폼에 따라 고유감각 신호에는 관절 위치, 관절 속도, 모터 전류, 액추에이터 토크, 바퀴 속도, 조향각, 관성 측정값, 베이스 방향, 그리퍼 개방 정도, 엔드이펙터 자세(End-Effector Pose), 접촉 추정값, 배터리 상태, 기계적 부하가 포함될 수 있다. 이러한 측정값을 이용하면 로봇은 외부 센서에만 의존하지 않고 자신의 자세, 움직임, 균형, 제어 상태를 추정할 수 있다.
+
+이 개념은 생물학적 고유감각과 유사하다. 사람은 팔과 다리를 계속 바라보지 않더라도 그 위치와 움직임을 대략적으로 알 수 있다. 물체를 향해 손을 뻗으면서도 손의 위치를 내부적으로 인식할 수 있다. 로봇도 센서, 액추에이터, 물리 행동을 조정하려면 이와 유사한 내부 몸체 표현이 필요하다.
+
+비전은 고유감각만으로 얻을 수 없는 정보를 제공한다. 카메라는 객체, 사람, 장애물, 자유 공간, 목표 위치, 표면 외형, 환경의 움직임을 보여준다. 깊이 카메라(Depth Camera), 스테레오 시스템(Stereo System), 시각 재구성(Visual Reconstruction)은 추가적인 기하 정보를 제공할 수 있다. 그러나 비전만으로는 관측된 목표가 도달 가능한지, 로봇이 이미 그 목표를 향해 움직이고 있는지, 현재 관절 구성이 요구되는 접근 동작을 허용하는지, 몸체가 기계적으로 안정적인지를 알 수 없다.
+
+객체가 이미지에서는 가까워 보이더라도 매니퓰레이터(Manipulator)의 작업 범위 밖에 있을 수 있다. 통로가 시각적으로 비어 있어도 이동 베이스가 너무 빠르게 회전하고 있다면 안전하게 진입하지 못할 수 있다. 파지점(Grasp Point)이 보이더라도 손목 방향이나 관절 한계 때문에 계획된 움직임을 수행하지 못할 수 있다. 고유감각-시각 융합은 외부 관측을 현재의 물리적 몸체 구성과 연결하여 이러한 모호성을 해결한다.
+
+두 모달리티(Modality)는 구조적으로 상당히 다르다. 시각 입력은 고차원이고 공간적으로 밀집되어 있으며 상대적으로 느리다. 고유감각 입력은 일반적으로 차원이 더 낮지만 시간적으로 정밀하며 제어와 직접 연결된다. 카메라는 초당 수십 프레임을 제공할 수 있지만, 관절 인코더와 관성 센서는 초당 수백 회 또는 수천 회 갱신될 수 있다.
+
+따라서 멀티모달 아키텍처는 각 모달리티에 특화된 인코더(Encoder)를 사용해야 한다. 시각 정보는 합성곱 신경망(Convolutional Neural Network), 비전 트랜스포머(Vision Transformer), 비디오 인코더(Video Encoder), 객체 중심 모델(Object-Centric Model)로 처리할 수 있다. 고유감각 데이터는 다층 퍼셉트론(Multilayer Perceptron), 시간 트랜스포머(Temporal Transformer), 순환 신경망(Recurrent Network), 상태공간 모델(State Space Model), 로봇의 운동학 구조를 표현하는 그래프 신경망(Graph Neural Network)으로 처리할 수 있다.
+
+시각 인코더는 이미지 패치 토큰(Image-Patch Token), 객체 토큰(Object Token), 깊이 특징, 움직임 특징, 3차원 장면 표현을 생성할 수 있다. 고유감각 인코더는 개별 관절, 로봇 링크, 액추에이터, 바퀴, 이동 베이스, 엔드이펙터, 또는 압축된 전체 몸체 상태를 나타내는 토큰을 생성할 수 있다.
+
+융합(Fusion)은 여러 단계에서 이루어질 수 있다. 초기 융합(Early Fusion)은 입력 단계와 가까운 위치에서 시각 특징과 고유감각 특징을 결합한다. 직접적인 상호작용이 가능하지만 많은 수의 시각 토큰이 상대적으로 작은 상태 표현을 압도할 수 있다. 후기 융합(Late Fusion)은 각 모달리티를 독립적으로 처리한 뒤 출력에 가까운 단계에서 결과를 결합한다. 이 방식은 모듈형이며 검증하기 쉽지만 관측된 환경과 로봇 몸체 사이의 세밀한 관계를 놓칠 수 있다.
+
+중간 융합(Intermediate Fusion)은 피지컬 AI에 더 적합한 경우가 많다. 먼저 각 모달리티를 적절한 인코더로 처리한 뒤, 교차 어텐션(Cross-Attention), 게이팅(Gating), 공유 잠재 토큰(Shared Latent Token), 멀티모달 트랜스포머 계층을 사용하여 압축된 표현을 연결한다. 이 방식은 모달리티별 고유 구조를 유지하면서 작업과 관련된 상호작용을 가능하게 한다.
+
+교차 어텐션을 사용하면 하나의 모달리티가 다른 모달리티에서 필요한 정보만 선택적으로 검색할 수 있다. 시각 객체 토큰은 로봇 상태 토큰을 질의하여 해당 객체가 도달 가능한지를 판단할 수 있다. 행동 쿼리(Action Query)는 목표 기하와 현재 관절 구성을 동시에 참조할 수 있다. 이동 베이스 토큰은 시각 관측에서 장애물이나 경로 경계 정보를 검색할 수 있다.
+
+반대 방향의 정보 검색도 유용하다. 고유감각 토큰은 시각 표현을 질의할 수 있다. 엔드이펙터 토큰은 그리퍼 근처의 객체에 주의를 기울일 수 있다. 바퀴 상태 토큰은 지형이나 도로 경계에 주의를 기울일 수 있다. 카메라 자세 토큰은 현재 시선 방향에 해당하는 영상 영역을 검색할 수 있다.
+
+양방향 융합(Bidirectional Fusion)은 시각 특징을 체화 인식적(Embodiment-Aware)으로 만들고, 고유감각 특징을 환경 인식적(Environment-Aware)으로 만든다. 동일한 시각 장면이라도 로봇 구성에 따라 요구되는 행동이 달라질 수 있다. 테이블 위의 컵은 팔이 중립 자세에 있을 때는 도달 가능하지만, 어깨 관절이 한계 근처에 있을 때는 도달 불가능할 수 있다. 이미지 자체는 변하지 않았지만 물리적으로 가능한 행동 집합은 달라진다.
+
+좌표 정렬(Coordinate Alignment)은 기본적인 요구사항이다. 시각 관측은 이미지 좌표, 카메라 좌표, 깊이 센서 좌표, 월드 좌표로 표현될 수 있다. 고유감각 정보는 관절 공간(Joint Space), 로봇 베이스 좌표, 링크 지역 좌표계(Link-Local Frame), 엔드이펙터 좌표로 표현될 수 있다.
+
+순운동학(Forward Kinematics)은 관절 위치를 로봇 링크 및 엔드이펙터 자세로 변환한다. 카메라 보정(Camera Calibration)은 이미지 관측을 로봇 좌표계와 연결한다. 깊이 추정이나 3차원 재구성은 시각적으로 관측된 목표에 실제 거리 기반 위치를 제공한다. 변환이 정확하지 않으면 모델은 객체를 잘못된 로봇 링크와 연결하거나 움직임을 잘못 해석할 수 있다.
+
+따라서 좌표계 식별 정보(Coordinate-Frame Identity)를 명시적으로 표현해야 한다. 위치는 기준 좌표계를 알고 있을 때만 의미가 있다. 작은 오류도 접촉에 가까운 상황에서는 큰 동작 오차를 만들 수 있으므로 변환 신뢰도와 보정 불확실성도 포함해야 한다.
+
+카메라 자세는 고유감각에 의해 결정되는 경우가 많다. 손목 장착 카메라는 매니퓰레이터와 함께 움직이고, 머리 장착 카메라는 로봇의 목이나 몸체 움직임에 따라 방향이 변한다. 정지한 객체도 카메라가 움직이면 영상 안에서 크게 이동할 수 있다.
+
+자기운동 인식 융합(Egomotion-Aware Fusion)은 관절 상태, 베이스 움직임, 카메라 외부 파라미터(Camera Extrinsics)를 이용하여 센서 움직임과 환경 움직임을 구분한다. 이는 시각 추적, 장면 재구성, 비주얼 서보잉(Visual Servoing), 월드 모델링(World Modeling)에 필요하다.
+
+손목 카메라를 사용하는 경우 모델은 각 프레임에 대응하는 팔 구성과 카메라 자세를 입력받아야 한다. 그렇지 않으면 카메라만 이동했는데도 객체가 움직였다고 잘못 판단할 수 있다.
+
+시간 정렬(Temporal Alignment)도 동일하게 중요하다. 고유감각 측정값은 일반적으로 카메라 프레임보다 훨씬 빠르게 갱신된다. 시각 관측에는 노출, 전송, 전처리 지연도 포함된다. 오래된 이미지와 최신 관절 상태를 시간 보정 없이 결합하면 물리적으로 일관되지 않은 상황이 만들어질 수 있다.
+
+하드웨어 타임스탬프(Hardware Timestamp), 시계 동기화(Clock Synchronization), 보간(Interpolation), 관측 나이 인코딩(Observation-Age Encoding), 모션 보정(Motion Compensation)은 스트림을 정렬하는 데 도움을 준다. 시각 특징은 처리가 완료된 시점이 아니라 실제 이미지가 노출된 시점의 로봇 상태와 연결해야 한다.
+
+고유감각 이력은 단일 측정값보다 더 유용한 경우가 많다. 속도, 가속도, 진동, 액추에이터 부하, 움직임 의도는 시간적 특성을 가진다. 상태공간 모델이나 시간 인코더는 최근의 몸체 움직임을 유용한 압축 표현으로 만들 수 있다.
+
+객체 움직임, 광학 흐름(Optical Flow), 상호작용 진행 상태, 환경 변화를 추정하려면 시각 이력도 필요하다. 따라서 효과적인 융합은 단일 이미지와 상태 벡터만 결합하는 것이 아니라 시간 표현들을 연결해야 한다.
+
+이동 로봇에서는 고유감각-시각 융합이 오도메트리(Odometry), 위치 추정(Localization), 내비게이션(Navigation), 지형 적응(Terrain Adaptation)을 지원한다. 바퀴 인코더와 관성 센서는 빠른 움직임 추정값을 제공하고, 비전은 랜드마크, 객체 움직임, 장면 구조를 제공한다.
+
+바퀴 오도메트리는 미끄러짐 때문에 실패할 수 있고, 시각 오도메트리는 저질감 환경, 어둠, 눈부심, 빠른 움직임 때문에 실패할 수 있다. 이 두 신호를 결합하면 어느 하나만 사용할 때보다 더 신뢰성 높은 추정값을 얻을 수 있다.
+
+관성 측정 장치(Inertial Measurement Unit)는 고주파 가속도 및 회전 정보를 제공한다. 비전은 상대적으로 느리지만 전역적으로 의미 있는 보정 정보를 제공한다. 이러한 원리는 시각-관성 오도메트리(Visual-Inertial Odometry)와 시각-관성 동시적 위치 추정 및 지도 작성(Visual-Inertial Simultaneous Localization and Mapping)의 기반이 된다.
+
+불규칙한 지형에서는 비전으로 경사면, 계단, 느슨한 표면, 장애물을 식별할 수 있다. 고유감각은 바퀴 미끄러짐, 몸체 진동, 피치(Pitch), 롤(Roll), 모터 부하를 보여준다. 두 정보를 결합하면 지형 이해와 적응형 움직임을 지원할 수 있다.
+
+시각적으로는 안전해 보이는 표면이라도 지나치게 큰 미끄러짐이나 진동을 발생시킬 수 있다. 로봇은 고유감각 증거를 이용하여 지형 추정값을 갱신하고 속도, 조향, 서스펜션, 경로 선택을 조정할 수 있다.
+
+다족보행 로봇(Legged Robot)에서는 융합이 특히 중요하다. 비전은 발판(Foothold), 지형 높이, 틈, 계단, 장애물을 예측한다. 고유감각은 몸체 방향, 관절 구성, 보행 위상(Gait Phase), 균형, 접촉 상태를 설명한다.
+
+하나의 발판이 유용한지는 현재 다리 위치, 무게중심, 보행 단계에 따라 달라진다. 따라서 멀티모달 정책은 시각 지형 특징과 로봇의 동적인 몸체 상태를 함께 고려해야 한다.
+
+고주파 안정화는 빠른 지역 제어기(Local Controller)가 담당해야 한다. 파운데이션 모델은 지형 조건부 목표, 보행 선택, 복구 전략을 제공할 수 있지만 검증된 균형 및 모터 제어 루프를 대체해서는 안 된다.
+
+로봇 매니퓰레이터에서는 고유감각-시각 융합이 도달(Reaching), 파지(Grasping), 삽입(Insertion), 비주얼 서보잉, 객체 추적을 지원한다. 비전은 목표를 식별하고 자세를 추정하며, 고유감각은 현재 팔, 손목, 그리퍼 구성을 알려준다.
+
+엔드이펙터와 목표 사이의 상대 변환(Relative Transformation)은 목표의 절대 위치보다 제어에 더 유용한 경우가 많다. 제어 정책은 이러한 상대 표현을 이용하여 조정된 움직임을 생성할 수 있다.
+
+비주얼 서보잉은 목표 시각 상태와 현재 관측 상태의 차이를 지속적으로 줄인다. 고유감각은 시각 오차를 물리적으로 의미 있는 관절 명령이나 엔드이펙터 명령으로 변환할 수 있도록 한다.
+
+도달 과정에서 융합 모델은 시각 목표, 관절 한계, 자기충돌(Self-Collision), 장애물 기하를 함께 고려할 수 있다. 파지 과정에서는 그리퍼 정렬과 손가락 개방 정도가 적절한지를 추정할 수 있다.
+
+접촉에 가까워지면 가림(Occlusion)이 중요해진다. 로봇 손이 카메라에서 목표를 가릴 수 있다. 고유감각은 그리퍼 자세를 유지하고, 메모리와 추적 시스템은 목표 상태의 추정값을 보존한다.
+
+그러나 고유감각은 로봇의 움직임만 설명할 뿐 객체의 완전한 반응을 알려주지는 않는다. 객체는 접촉 이후 움직일 수 있으므로 갱신된 비전, 힘 센싱, 촉각 피드백이 필요하다. 따라서 고유감각-시각 융합은 더 큰 멀티모달 아키텍처의 일부로 유지되어야 한다.
+
+언어를 추가하면 비전-고유감각-언어 모델(Vision-Proprioception-Language Model)을 구성할 수 있다. 언어는 "상자 뒤쪽으로 손을 뻗어라", "사람 근처에서는 천천히 움직여라", "카메라가 제어 패널을 계속 바라보도록 하라"와 같은 목표를 제공한다.
+
+동일한 시각 장면과 몸체 상태에서도 지시에 따라 다른 행동이 필요할 수 있다. 언어는 현재 어떤 객체, 로봇 링크, 움직임 제약, 안전 조건이 중요한지를 결정한다.
+
+행동 디코더(Action Decoder)는 시각 특징, 고유감각 상태, 언어 지시에 주의를 기울이는 미래 행동 쿼리(Future-Action Query)를 사용할 수 있다. 생성된 행동 시퀀스는 목표, 환경, 현재 체화 상태를 모두 조건으로 사용한다.
+
+체화 표현(Embodiment Representation)은 이 과정의 중심이다. 고정된 관절 값 목록만으로는 범용 로봇 학습에 충분하지 않다. 각 관절 토큰은 관절 ID, 부모 및 자식 링크, 축, 한계, 액추에이터 유형, 센서 위치, 제어 가능 범위를 포함할 수 있다.
+
+그래프 기반 표현(Graph-Based Representation)은 로봇을 운동학 구조로 인코딩할 수 있다. 시각 객체는 관련된 로봇 링크나 엔드이펙터에 주의를 기울일 수 있다. 왼팔을 사용하는 행동이라면 왼팔 관절과 해당 팔 주변의 기하 정보를 더 중요하게 처리해야 한다.
+
+형태 인식 표현(Morphology-Aware Representation)은 교차 체화 학습(Cross-Embodiment Learning)도 지원한다. 서로 다른 로봇은 관절 수, 링크 길이, 바퀴 배열, 센서, 행동 공간이 서로 다르다. 하나의 플랫폼에 맞게 설계된 고정 상태 벡터는 다른 플랫폼으로 자연스럽게 전이되지 않는다.
+
+공유 모델은 구조화된 로봇 설명을 처리하고 체화별 어댑터(Embodiment-Specific Adapter)를 사용할 수 있다. 공유 계층은 도달 가능성, 시각 목표 추적, 균형, 충돌 회피, 몸체-환경 관계와 같은 일반 개념을 학습한다. 어댑터는 이러한 개념을 플랫폼별 행동으로 변환한다.
+
+공구 변경도 비전과 고유감각의 관계를 바꾼다. 그리퍼, 프로브(Probe), 카메라 붐(Camera Boom), 흡착 도구(Suction Tool), 용접 장치는 서로 다른 기하 구조와 능력을 가진다. 따라서 활성 공구 구성을 상태 표현에 포함해야 한다.
+
+시각적으로 보이는 목표는 긴 검사 프로브를 사용하면 도달 가능하지만 짧은 그리퍼로는 도달 불가능할 수 있다. 모델은 현재 공구의 크기, 방향, 운용 제약을 조건으로 기하학적 추론을 수행해야 한다.
+
+고유감각은 시각 오류를 감지하는 데도 도움을 줄 수 있다. 비전 시스템이 로봇이 정지해 있다고 예측하지만 바퀴 인코더와 관성 센서가 움직임을 나타낸다면 관측이 일치하지 않는다. 마찬가지로 시각 추적기가 엔드이펙터가 왼쪽으로 움직였다고 보고하지만 운동학은 오른쪽 움직임을 예측한다면 동기화, 보정, 추적에 문제가 있을 수 있다.
+
+따라서 교차 모달 일관성 검사(Cross-Modal Consistency Checking)는 진단과 안전에 유용하다. 모델은 예측된 시각 변화와 측정된 로봇 움직임을 비교하여 비정상적인 불일치를 식별할 수 있다.
+
+월드 모델(World Model)은 현재 장면, 고유감각 상태, 계획된 행동으로부터 미래 시각 관측을 예측할 수 있다. 예측과 실제 결과의 차이는 객체 이동, 충돌, 바퀴 미끄러짐, 액추에이터 고장, 인식 오류를 나타낼 수 있다.
+
+자기지도 학습(Self-Supervised Learning)은 많은 수작업 라벨 없이도 이러한 관계를 활용할 수 있다. 모델은 상태와 행동으로부터 미래 이미지를 예측하거나, 관측된 움직임으로부터 상태 변화를 추정하거나, 누락된 측정값을 복원하거나, 시각 및 고유감각 스트림이 동기화되었는지를 판단할 수 있다.
+
+대조학습(Contrastive Learning)은 시각 관측을 대응하는 몸체 상태나 행동 시퀀스와 정렬할 수 있다. 일치하는 관측과 상태는 잠재 공간에서 가까워지고, 일치하지 않는 조합은 멀어진다.
+
+그러나 단순한 시각-상태 정렬은 여러 몸체 구성이 비슷한 장면을 관측할 수 있기 때문에 모호할 수 있다. 객체 조건부(Object-Conditioned) 및 행동 조건부(Action-Conditioned) 학습 목표가 더 유용하다. 모델은 영상에 보이는 그리퍼 자세를 순운동학 결과와 정렬하거나, 관측된 움직임을 실제 실행 행동과 정렬할 수 있다.
+
+융합 표현은 공유 정보와 모달리티별 고유 정보를 모두 유지해야 한다. 비전은 고유감각으로는 얻을 수 없는 객체 정체성, 색상, 질감, 장면 문맥을 포함한다. 고유감각은 카메라에서는 보이지 않을 수 있는 내부 액추에이터와 관절 정보를 포함한다.
+
+따라서 유용한 아키텍처는 공통 체화 장면 표현(Common Embodied-Scene Representation)을 유지하면서 시각 및 고유감각의 전용 특징(Private Feature)도 보존한다. 공유 특징은 로봇과 환경의 관계를 설명하고, 전용 특징은 세밀한 외형이나 액추에이터 동역학을 유지한다.
+
+불확실성 인식 융합(Uncertainty-Aware Fusion)이 필요하다. 비전은 블러(Blur), 어둠, 눈부심, 가림, 반사 물체 때문에 신뢰성이 낮아질 수 있다. 고유감각은 인코더 고장, 백래시(Backlash), 바퀴 미끄러짐, 열 드리프트(Thermal Drift), 보정 오류 때문에 부정확해질 수 있다.
+
+각 모달리티는 신뢰도, 타임스탬프, 추정 노이즈, 센서 상태 정보를 포함해야 한다. 게이팅 메커니즘은 이들의 기여도를 동적으로 조절할 수 있다.
+
+어두운 환경에서는 고유감각과 저장된 지도에 더 많이 의존할 수 있다. 바퀴 미끄러짐이 발생하면 바퀴 오도메트리에 대한 의존도를 낮추고 시각 움직임에 더 의존해야 한다. 일시적인 가림 중에는 운동학 예측과 메모리를 더 중요하게 사용할 수 있다.
+
+모달리티 사이의 일치는 신뢰도를 높일 수 있지만 상관된 오류(Correlated Error)는 여전히 발생할 수 있다. 잘못된 카메라 보정으로 인해 시각 및 고유감각 해석이 서로 일치하는 것처럼 보이면서도 둘 다 틀릴 수 있다. 따라서 독립적인 검증과 중복 센싱이 필요하다.
+
+누락된 모달리티는 명시적으로 표현해야 한다. 고장난 카메라, 누락된 인코더, 지연된 관성 패킷을 일반적인 0 벡터로 대체하면 모델이 유효한 측정값으로 잘못 해석할 수 있다.
+
+학습 중 모달리티 드롭아웃(Modality Dropout)을 적용하면 강건성이 향상된다. 모델은 일부 정보만으로도 동작하는 방법을 학습하면서 신뢰도를 낮추고, 속도를 줄이거나, 추가 센싱을 요청하도록 학습할 수 있다.
+
+고유감각-시각 융합은 이상 탐지(Anomaly Detection)도 지원한다. 예상하지 못한 전류, 토크, 관절 오차, 진동, 미끄러짐을 시각 장면 및 현재 작업과 연관하여 해석할 수 있다.
+
+보이는 경사면을 오를 때 높은 모터 전류가 발생하는 것은 정상일 수 있지만 평평한 바닥에서 동일한 전류가 발생하면 비정상일 수 있다. 객체 근처에서 예상하지 못한 매니퓰레이터 토크가 발생하면 조기 접촉이나 충돌을 의미할 수 있다. 비전은 가능한 물리적 원인을 식별하는 데 도움을 준다.
+
+언어와 유지보수 지식은 이러한 측정값을 진단 설명으로 변환할 수 있다. 로봇은 예상보다 일찍 저항이 발생했다거나, 시각적으로 젖어 보이는 표면에서 바퀴 미끄러짐이 감지되었다고 보고할 수 있다.
+
+이러한 설명은 측정된 텔레메트리(Telemetry)에 근거해야 한다. 생성 모델이 센서 증거가 없는 고장이나 원인을 만들어내서는 안 된다.
+
+객체 중심 메모리(Object-Centric Memory)는 시각 객체와 과거 로봇 구성 사이의 관계를 저장할 수 있다. 로봇은 특정 경로에서 미끄러짐이 발생했다는 사실, 특정 베이스 위치에서 선반 접근이 어려웠다는 사실, 특정 카메라 시점에서 심한 가림이 발생했다는 사실을 기억할 수 있다.
+
+이러한 경험은 향후 계획을 지원한다. 유사한 작업을 다시 수행할 때 이전 몸체 상태, 행동, 결과를 검색할 수 있다.
+
+저장된 경험에는 로봇 유형, 공구, 적재물, 환경, 보정 버전, 센서 조건을 포함해야 한다. 하나의 로봇에서 성공한 구성이 다른 로봇에 그대로 적용될 수 있다고 가정해서는 안 된다.
+
+디지털 트윈(Digital Twin)은 예상되는 운동학, 기하학, 운용 정보를 제공할 수 있다. 실시간 시각 및 고유감각 데이터는 로봇과 환경의 기준 상태(Nominal State)와 비교할 수 있다.
+
+차이가 발생하면 장비 이동, 잘못된 공구 장착, 관절 보정 오류, 변형, 지도 변경을 의미할 수 있다. 모델은 관측값과 기준값을 억지로 일치시키지 말고 모두 유지해야 한다.
+
+학습 데이터에는 동기화된 이미지, 로봇 상태, 행동, 보정 파라미터, 작업 설명, 결과가 포함되어야 한다. 정확한 시간 및 기하 정렬은 단순한 데이터 양보다 더 중요할 수 있다.
+
+로봇 시연(Robot Demonstration)은 인식, 내부 상태, 성공적인 행동을 연결하는 유용한 예제를 제공한다. 실패 시연도 충돌, 도달 불가능한 목표, 바퀴 미끄러짐, 관절 한계 위반, 복구 행동을 포함하므로 중요하다.
+
+시뮬레이션은 다양한 체화 및 환경에 대해 정확한 로봇 상태, 객체 자세, 카메라 변환, 행동을 대규모로 생성할 수 있다. 그러나 실제 시스템에는 시뮬레이션에 없는 센서 노이즈, 액추에이터 지연, 백래시, 진동, 모션 블러, 보정 오차가 존재한다.
+
+따라서 효과적인 현실 전이(Real-World Transfer)를 위해 도메인 랜덤화(Domain Randomization), 센서 노이즈 모델링, 실제 데이터 기반 미세조정이 필요하다.
+
+평가는 오프라인 예측 정확도만 측정해서는 안 된다. 비주얼 서보잉 오차, 도달 가능성 예측, 목표 자세 정확도, 위치 추정 드리프트, 궤적 성공률, 지형 분류, 미끄러짐 감지, 폐루프 작업 완료율을 포함해야 한다.
+
+모달리티 제거 시험(Modality-Ablation Test)은 두 스트림을 실제로 의미 있게 사용하는지를 보여준다. 관절 상태를 제거해도 도달 성능이 거의 변하지 않는다면 모델이 시각 패턴을 암기하고 있을 수 있다. 장애물이 많은 내비게이션에서 비전을 제거해도 성능이 유지된다면 정책이 과거 궤적에 과적합되어 있을 수 있다.
+
+반사실적 시험(Counterfactual Test)은 장면을 고정한 채 로봇 구성을 변경할 수 있다. 관절이 한계에 가까워지거나 베이스 방향이 바뀌면 예측된 행동도 달라져야 한다.
+
+몸체 상태를 유지한 채 시각 장면도 변경할 수 있다. 장애물이나 목표가 이동하면 계획된 행동이 일관되게 갱신되어야 한다.
+
+모든 행동은 비전과 고유감각을 모두 변화시키므로 폐루프 시험(Closed-Loop Testing)이 필수적이다. 작은 예측 오차가 누적되면 드리프트, 진동, 불안정, 충돌로 이어질 수 있다.
+
+실제 로봇 평가는 미지의 환경, 카메라 교란, 인코더 노이즈, 적재물 변화, 움직이는 장애물, 보정 변화까지 포함해야 한다. 관측이 서로 일치하지 않으면 시스템은 신뢰도를 낮추고 안전 행동으로 전환해야 한다.
+
+효율적인 배포를 위해 계층형 처리(Hierarchical Processing)가 필요하다. 고주파 관절 및 관성 신호는 지역 추정기와 제어기가 처리해야 한다. 시각 처리는 더 낮은 주기로 동작할 수 있으며, 대형 멀티모달 파운데이션 모델은 압축된 시각 및 몸체 상태 토큰을 입력받아야 한다.
+
+추론 모델은 모든 원시 인코더 샘플을 받을 필요가 없다. 현재 자세, 속도, 관절 한계 여유(Joint-Limit Margin), 도달 가능성, 미끄러짐 확률, 움직임 단계, 불확실성과 같은 요약 정보를 사용할 수 있다.
+
+이러한 설계는 반응성을 유지하면서 계산 부하를 줄인다. 하드 실시간 제어(Hard Real-Time Control)는 느린 의미 추론과 분리된 상태를 유지한다.
+
+결정론적 안전 시스템(Deterministic Safety System)은 최종 권한을 유지해야 한다. 관절 한계, 충돌 방지, 속도 제한, 안정성 제어, 액추에이터 보호, 비상 정지는 학습된 융합 모델에만 의존해서는 안 된다.
+
+파운데이션 모델은 문맥을 해석하고 행동을 제안할 수 있지만, 검증된 플래너(Planner)와 제어기가 실행 전에 물리적 실행 가능성을 확인해야 한다.
+
+고유감각-시각 융합의 장기적인 목표는 피지컬 AI 시스템이 외부 환경과 그 안에 존재하는 자신의 몸체를 일관되게 이해하도록 하는 것이다.
+
+이러한 로봇은 객체가 어디에 보이는지만 이해하는 것이 아니라, 해당 객체에 도달할 수 있는지, 현재 움직임이 인식에 어떤 영향을 주는지, 어떤 몸체 부위를 사용해야 하는지, 행동에 따라 환경이 어떻게 변할 수 있는지를 이해해야 한다.
+
+비전은 외부 증거를 제공하고, 고유감각은 체화 상태를 제공한다. 두 정보의 융합은 보는 것과 행동하는 것을 연결한다.
+
+신뢰할 수 있는 피지컬 AI 아키텍처는 특화된 시각 및 고유감각 인코더, 동기화된 시간 처리, 명시적 좌표 변환, 형태 인식 표현, 교차 어텐션, 불확실성 인식 융합, 외부 메모리, 결정론적 제어, 독립적인 안전 메커니즘을 결합할 것이다.
+
+이러한 아키텍처 안에서 고유감각-시각 융합은 환경 인식과 체화 행동 사이의 다리가 된다. 카메라 관측과 로봇 내부 신호를 로봇이 어디에 있는지, 주변에 무엇이 존재하는지, 어떤 행동이 물리적으로 가능한지, 다음에 무엇을 해야 하는지에 대한 접지된 이해(Grounded Understanding)로 변환한다.
+
+##  
+
+## 3.8 Multi Modal Data Collection and Alignment Pipeline [w/Code]
+
+![](images/image8.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+A multimodal data collection and alignment pipeline is the complete engineering process used to acquire, synchronize, calibrate, validate, organize, and prepare heterogeneous robot data for training Physical AI models. Modern robots may collect RGB images, depth maps, LiDAR scans, radar measurements, audio, tactile signals, joint states, force and torque values, inertial measurements, control commands, language instructions, maps, and task outcomes. These streams describe the same physical interaction from different perspectives, but they differ in format, frequency, coordinate system, latency, uncertainty, and semantic meaning. A reliable pipeline must transform them into a coherent dataset in which every observation is connected to the correct time, place, robot state, action, and task context.
+
+The quality of multimodal alignment is often more important than the total amount of collected data. A very large dataset with inaccurate timestamps, incorrect calibration, inconsistent coordinate frames, or weak task labels may teach the model false physical relationships. If a force peak is paired with the wrong video frame, the model may learn an incorrect contact event. If a camera image is associated with an outdated robot pose, visual grounding may become geometrically inconsistent. If language instructions are linked to the wrong trajectory, the model may learn misleading action semantics.
+
+The pipeline should therefore begin with a clear data specification. Before recording, engineers must define which modalities are required, why they are needed, how frequently they should be sampled, which coordinate frames they use, and how they will support the target learning objectives. Data collected without a defined purpose can become expensive to store but difficult to use.
+
+A navigation dataset may require camera images, LiDAR, wheel odometry, inertial measurements, global pose, control commands, map context, and obstacle annotations. A manipulation dataset may require multi-view images, depth, joint positions, gripper state, force and torque, tactile measurements, object pose, tool configuration, and task outcome. An inspection dataset may additionally require component identifiers, digital-twin references, image-quality parameters, defect labels, and viewpoint metadata.
+
+The data specification should include units, numerical precision, expected ranges, coordinate conventions, naming rules, compression formats, and missing-data policies. A joint angle must be clearly identified as degrees or radians. A force value must specify the sensor frame and sign convention. A pose must indicate whether it represents the transformation from the robot to the world or from the world to the robot.
+
+Sensor selection affects the entire pipeline. Sensors should provide the accuracy, field of view, update rate, range, and environmental robustness required by the task. Their interfaces must also support reliable timestamps and calibration. A high-resolution sensor is not necessarily useful if it produces excessive latency or cannot be synchronized with the rest of the system.
+
+Each sensor should have a unique identifier and a versioned configuration record. The record may include model name, serial number, firmware version, calibration date, mounting location, intrinsic parameters, sampling rate, exposure settings, gain, resolution, and communication interface. This metadata allows engineers to reproduce the physical configuration and identify changes that may affect the dataset.
+
+Robot configuration must be recorded with similar care. The dataset should identify the robot platform, morphology, link dimensions, actuator types, tool, payload, controller version, safety settings, and software build. A trajectory collected with one gripper or payload may not represent the dynamics of another configuration.
+
+Time synchronization is one of the most important components of the pipeline. Multimodal sensors rarely operate at the same frequency. Cameras may generate data at thirty or sixty frames per second, LiDAR at ten or twenty scans per second, tactile sensors at hundreds of hertz, and joint encoders at one kilohertz or more.
+
+Every data item should contain a timestamp generated as close as possible to the physical measurement. The time at which a camera image is exposed is more meaningful than the time at which the processed image reaches the logging computer. The time at which a motor command is applied is different from the time at which the controller calculated it.
+
+Hardware timestamping is generally more reliable than software timestamping because it reduces uncertainty caused by operating-system scheduling, buffering, network transmission, and driver latency. Sensors should use a common clock whenever possible.
+
+Clock synchronization methods may include Precision Time Protocol, Network Time Protocol, GNSS time, trigger signals, shared oscillators, or hardware synchronization lines. The appropriate method depends on the required accuracy. Millisecond-level synchronization may be sufficient for slow navigation, while contact-rich manipulation may require microsecond- or sub-millisecond-level timing.
+
+Synchronization quality should be measured rather than assumed. The dataset should record clock offset, drift, jitter, packet delay, and synchronization status. If two sensors temporarily lose synchronization, the affected data should be marked.
+
+Software synchronization is still necessary when hardware synchronization is unavailable. Streams can be aligned through nearest timestamps, interpolation, resampling, or window-based aggregation. However, the alignment method should reflect the physical properties of the signal.
+
+A joint position can often be interpolated between nearby samples. A collision event or discrete contact transition should not be averaged across a long interval. A LiDAR scan may require motion compensation because its points are collected over time rather than simultaneously.
+
+Observation age should also be tracked. A visual feature may be generated fifty milliseconds after image exposure because of preprocessing. The model should know the timestamp of the original observation and not only the time at which the feature became available.
+
+Spatial calibration is the second major alignment problem. Each sensor observes the world from a different location and orientation. Camera images, depth maps, LiDAR points, tactile measurements, and robot joint states must be connected through coordinate transformations.
+
+Camera intrinsic calibration estimates focal length, principal point, lens distortion, and related imaging parameters. Extrinsic calibration estimates the rigid transformation between the camera and another frame, such as the robot base, end effector, LiDAR, or world coordinate system.
+
+Depth-camera calibration should include the relationship between color and depth sensors. LiDAR-camera calibration connects three-dimensional points with image pixels. Microphone-array calibration identifies the position and orientation of each microphone. Tactile-sensor calibration connects local pressure coordinates with the corresponding robot link or fingertip frame.
+
+Calibration parameters should be versioned and stored with the dataset. If a camera is moved, a tool is replaced, or a robot structure is repaired, the previous calibration may no longer be valid. Data recorded under different calibration versions should not be mixed without clear metadata.
+
+Calibration uncertainty should also be represented. Extrinsic parameters are estimates, not perfect values. Small rotational errors can create large spatial displacement at long range. Models and downstream tools should receive confidence or covariance where practical.
+
+Online calibration monitoring can detect changes during operation. A fixed relationship between a camera and robot link should remain consistent. If observed landmarks or known geometry no longer match the expected transformation, the system may indicate mechanical movement or calibration drift.
+
+Coordinate frames should follow a clear hierarchy. Typical frames may include world, map, odometry, robot base, individual links, end effector, tool center point, camera, LiDAR, radar, and tactile sensor. The relationship among these frames should be recorded in a transformation tree.
+
+Frame names must be stable and unambiguous. A generic label such as "camera" is insufficient when several cameras are present. The dataset should identify front camera, rear camera, wrist camera, and inspection camera separately.
+
+Raw data collection should preserve as much original information as practical. Compression, filtering, and feature extraction may remove details that later become important. Raw images, point clouds, waveforms, and telemetry should be stored when storage capacity allows, while processed versions are generated as separate derived artifacts.
+
+Lossless or lightly compressed formats are preferable for calibration and scientific analysis. More aggressive compression may be used for long-term storage, but its effect on fine defects, audio frequencies, depth precision, or tactile patterns should be measured.
+
+The logging system should be designed for high throughput and failure tolerance. It must handle several streams without dropping data or blocking robot control. Logging should run separately from hard real-time control so that storage delays do not affect safety or motion.
+
+Buffers can absorb temporary write delays, but excessive buffering increases the risk of data loss and makes timestamps harder to interpret. The system should monitor buffer occupancy, storage speed, dropped packets, and disk health.
+
+Every recording session should contain a manifest. The manifest identifies the robot, sensors, calibration versions, software versions, operator, environment, task, start and end time, weather or lighting conditions, and known anomalies.
+
+Mission and task context should be logged as structured events. A complete dataset should not contain only sensor streams. It should indicate when a task started, which instruction was active, which subtask was being performed, when contact occurred, whether the action succeeded, and why it failed.
+
+State-machine transitions provide useful semantic boundaries. Navigation, approach, alignment, grasp, lift, inspection, recovery, and completion states can be stored as event markers. These markers help segment long recordings into meaningful episodes.
+
+Language data requires careful treatment. Spoken or written instructions should be recorded with timestamp, speaker or source, authentication status, original wording, normalized wording, and linked task. Automatic speech recognition results should remain separate from the original audio because the transcription may contain errors.
+
+Operator corrections are valuable learning signals. If a person changes a target, cancels an action, or explains a failure, the correction should be linked to the preceding observations and actions. This enables preference learning, instruction refinement, and recovery modeling.
+
+Action data should distinguish commanded, planned, and executed motion. A planner may generate a trajectory that the controller modifies because of limits or disturbances. The final actuator command may differ from the original plan.
+
+The dataset should therefore record high-level goals, planned trajectories, controller references, actual joint motion, actuator output, and safety intervention. This allows the model to learn the difference between intended and realized behavior.
+
+Outcome labels should include more than success or failure. Partial success, timeout, human intervention, collision avoidance, slip, unreachable target, perception error, planning failure, and communication loss provide more informative supervision.
+
+Automatic event detection can support labeling. Force thresholds may identify contact, object tracking may identify movement, controller states may identify completion, and safety logs may identify limit violations. However, automatic labels should include confidence because thresholds can produce errors.
+
+Human annotation remains important for semantic and ambiguous events. Annotators may identify target objects, task intent, unusual behavior, failure causes, or scene relationships. Annotation tools should display synchronized multimodal streams so that decisions are based on full context rather than one sensor.
+
+Annotation guidelines must be precise. Different annotators may interpret "contact," "slip," "blocked path," or "successful grasp" differently. Definitions, examples, and conflict-resolution procedures improve consistency.
+
+Inter-annotator agreement should be measured. Low agreement indicates that the label is ambiguous or the instructions are insufficient. Such labels may need refinement rather than simply increasing annotation volume.
+
+Data segmentation converts continuous recordings into training examples. Segments may be defined by fixed time windows, state transitions, events, skills, or complete episodes. The segmentation strategy should match the learning task.
+
+Short windows are useful for contact detection or local control. Longer windows are required for task planning, temporal reasoning, and recovery. Hierarchical datasets may preserve both fine-grained steps and full mission episodes.
+
+Segment boundaries should avoid separating causes from consequences. A window describing a grasp failure should include the approach, contact, slip, and recovery rather than only the final dropped object.
+
+Multimodal alignment tables can link every sample or segment to corresponding data across streams. An image may be associated with the nearest robot state, recent audio window, LiDAR scan, active instruction, and action command.
+
+The alignment table should record not only the selected correspondence but also the time difference and alignment method. This allows later filtering based on synchronization quality.
+
+For irregular streams, continuous-time representations may be preferable. Instead of forcing every modality into one fixed frequency, the model receives timestamps and learns from asynchronous events. This avoids artificial duplication or interpolation.
+
+Quality assurance should be applied throughout the pipeline. Automated checks can identify missing files, corrupted frames, impossible values, repeated timestamps, unit errors, calibration mismatch, and abnormal sampling rates.
+
+Physical consistency checks are particularly valuable. Joint positions should remain within limits. Camera motion should be compatible with robot kinematics. Object motion should not exceed physically plausible speed without explanation. LiDAR points projected into the camera should align with visible structure.
+
+Cross-modal consistency checks can detect hidden errors. A motor command indicating motion should correspond to changing proprioception. A contact force should occur near a physical object. Speech transcription should align with detected voice activity.
+
+Data visualization remains important even in automated pipelines. Engineers should inspect synchronized video, point clouds, state plots, audio, and event markers. Many timing or calibration errors become obvious when modalities are viewed together.
+
+Dataset cleaning should remove or mark unusable data rather than silently modifying it. Corrupted files, severe desynchronization, missing calibration, sensor saturation, and operator mistakes should be documented.
+
+Data should be assigned quality levels. High-quality samples may support precise control training, while lower-quality samples may remain useful for semantic pretraining or robustness experiments. A single binary keep-or-delete decision may waste valuable information.
+
+Normalization and preprocessing should be reproducible. Image resizing, depth scaling, point-cloud filtering, audio normalization, joint-state scaling, and language tokenization should be defined in versioned code.
+
+Training, validation, and test splits must avoid leakage. Consecutive frames from the same episode should not be randomly distributed across splits because they are nearly identical. Splits should be created by mission, object instance, environment, robot, site, or time period depending on the generalization objective.
+
+Cross-site evaluation is important for Physical AI. A model trained and tested in the same factory may rely on background or layout shortcuts. Holding out complete environments provides a more realistic test of transfer.
+
+Cross-embodiment splits can test whether representations generalize to different robots. Cross-object splits evaluate open-world manipulation. Cross-condition splits test lighting, weather, payload, surface, or sensor changes.
+
+Data balancing should consider both frequency and importance. Routine navigation may generate millions of examples, while rare collisions, failures, or recovery events are much less common. Uniform sampling can cause the model to ignore rare but critical situations.
+
+Targeted collection, replay, simulation, oversampling, and weighted objectives can increase the influence of rare events. Synthetic data may expand failure coverage, but real examples remain necessary for validation.
+
+Privacy, security, and access control are also part of the pipeline. Robot data may contain people, voices, documents, facility layouts, equipment identifiers, and proprietary procedures.
+
+Sensitive information should be minimized, anonymized, encrypted, and stored according to policy. Access logs and dataset permissions should identify who can view or modify each data category.
+
+Data provenance is essential. Every derived example should be traceable to its original recording, calibration, preprocessing version, annotation source, and transformation history. This allows errors to be corrected and models to be audited.
+
+Dataset versions should be immutable once released for training. Corrections should produce a new version rather than silently changing existing files. Model records should identify exactly which dataset version was used.
+
+Continuous data collection introduces distribution drift. Sensors age, environments change, tools are replaced, software is updated, and operators use new terminology. The pipeline should monitor whether recent data differs significantly from the original training distribution.
+
+Drift detection can compare embedding distributions, sensor statistics, failure rates, and task performance. Significant changes may trigger additional labeling, recalibration, or model retraining.
+
+Active learning can prioritize which data should receive human review. The system can select uncertain, novel, high-risk, or disagreement cases rather than labeling every sample uniformly.
+
+Fleet learning can combine data from multiple robots. Shared schemas, synchronized metadata, coordinate conventions, and version management are required so that recordings remain comparable.
+
+Local site information may need to remain private. Federated or distributed learning can update models without transferring all raw data, although consistency and validation become more complex.
+
+The final training dataset should expose both raw and structured views. Raw streams support future research, while structured episodes support efficient model training. Object tracks, scene graphs, event records, aligned sensor windows, and action chunks can all be generated as derived representations.
+
+The pipeline should support multiple learning objectives. Contrastive learning may align modalities. Reconstruction may recover masked signals. Prediction may estimate future states. Imitation learning may map observations to actions. Language modeling may connect instructions with trajectories.
+
+A single dataset can support these objectives only if timing, geometry, task semantics, and provenance are preserved. Prematurely reducing data to fixed labels can limit future use.
+
+Evaluation data should be collected with the same care as training data. Benchmark episodes should include representative normal tasks, difficult conditions, rare failures, and distribution shifts. They should remain separated from model-development data.
+
+Closed-loop evaluation requires more than recorded datasets, but high-quality aligned logs remain essential for analyzing why the robot succeeded or failed. Every action, observation, state estimate, safety intervention, and operator correction should be reconstructable.
+
+Efficient storage and retrieval become important as dataset size grows. Hierarchical storage may keep recent or frequently used data on fast disks while archiving raw data in slower storage. Metadata indexes allow users to search by task, object, sensor, failure, location, or quality.
+
+Embedding-based retrieval can identify semantically or physically similar episodes. An engineer may search for all cases involving wheel slip, failed connector insertion, or unexpected human intervention.
+
+The long-term goal of the multimodal data pipeline is not merely to record as much robot data as possible. It is to create trustworthy evidence of physical interaction that can be reused for learning, evaluation, diagnosis, and continuous improvement.
+
+A reliable pipeline must know what was observed, when it was observed, where the sensor was located, what the robot was doing, which instruction was active, how certain the measurements were, and what happened afterward.
+
+Temporal synchronization connects events across sensors. Spatial calibration connects observations across coordinate frames. Semantic annotation connects raw measurements with tasks and outcomes. Provenance connects every derived example with its source.
+
+Together, these mechanisms transform independent sensor logs into a coherent multimodal dataset. This dataset becomes the foundation on which vision-language-action models, world models, robot policies, anomaly detectors, and Physical AI foundation models are trained.
+
+The strongest Physical AI systems will therefore treat data collection and alignment as part of the model architecture rather than as a separate preliminary step. Poorly aligned data places a hard limit on intelligence, regardless of model size.
+
+Within a complete robot learning system, the multimodal data collection and alignment pipeline becomes the bridge between physical experience and machine learning. It converts continuous, asynchronous, noisy robot operation into structured and verifiable training evidence from which grounded, generalizable, and safe behavior can emerge.
+
+멀티모달 데이터 수집 및 정렬 파이프라인(Multimodal Data Collection and Alignment Pipeline)은 피지컬 AI 모델 학습을 위해 서로 다른 종류의 로봇 데이터를 수집하고, 동기화하고, 보정하며, 검증하고, 구조화하고, 학습 가능한 형태로 준비하는 전체 엔지니어링 과정이다. 현대 로봇은 RGB 이미지, 깊이 지도(Depth Map), LiDAR 스캔, 레이더 측정값(Radar Measurement), 오디오(Audio), 촉각 신호(Tactile Signal), 관절 상태(Joint State), 힘·토크 값(Force and Torque Value), 관성 측정값(Inertial Measurement), 제어 명령(Control Command), 언어 지시(Language Instruction), 지도(Map), 작업 결과(Task Outcome)를 수집할 수 있다. 이러한 스트림은 동일한 물리적 상호작용을 서로 다른 관점에서 설명하지만, 데이터 형식, 샘플링 주기, 좌표계, 지연 시간, 불확실성, 의미적 역할이 서로 다르다. 신뢰할 수 있는 파이프라인은 모든 관측이 올바른 시간, 위치, 로봇 상태, 행동, 작업 문맥에 연결된 일관된 데이터셋으로 변환되어야 한다.
+
+멀티모달 정렬(Multimodal Alignment)의 품질은 수집된 데이터의 전체 양보다 더 중요할 수 있다. 타임스탬프가 부정확하거나, 보정 정보가 잘못되었거나, 좌표계가 일관되지 않거나, 작업 라벨이 불충분한 대규모 데이터셋은 모델에 잘못된 물리 관계를 학습시킬 수 있다. 힘의 급증이 잘못된 비디오 프레임과 연결되면 모델은 접촉 사건을 잘못 이해할 수 있다. 카메라 이미지가 오래된 로봇 자세와 연결되면 시각 접지가 기하학적으로 일관되지 않게 된다. 언어 지시가 잘못된 궤적과 연결되면 모델은 잘못된 행동 의미를 학습할 수 있다.
+
+따라서 파이프라인은 명확한 데이터 명세(Data Specification)에서 시작해야 한다. 기록을 시작하기 전에 어떤 모달리티가 필요한지, 왜 필요한지, 어느 주기로 샘플링해야 하는지, 어떤 좌표계를 사용하는지, 어떤 학습 목표를 지원하는지를 정의해야 한다. 명확한 목적 없이 수집된 데이터는 저장 비용은 크지만 실제 활용은 어려울 수 있다.
+
+내비게이션 데이터셋은 카메라 이미지, LiDAR, 바퀴 오도메트리(Wheel Odometry), 관성 측정값, 전역 자세(Global Pose), 제어 명령, 지도 문맥, 장애물 주석이 필요할 수 있다. 조작 데이터셋은 다중 시점 이미지(Multi-View Image), 깊이, 관절 위치, 그리퍼 상태(Gripper State), 힘·토크, 촉각 측정값, 객체 자세(Object Pose), 공구 구성(Tool Configuration), 작업 결과가 필요할 수 있다. 검사 데이터셋에는 추가로 부품 식별자(Component Identifier), 디지털 트윈 참조(Digital-Twin Reference), 이미지 품질 파라미터(Image-Quality Parameter), 결함 라벨(Defect Label), 시점 메타데이터(Viewpoint Metadata)가 필요할 수 있다.
+
+데이터 명세에는 단위(Unit), 수치 정밀도(Numerical Precision), 예상 범위(Expected Range), 좌표 규칙(Coordinate Convention), 이름 규칙(Naming Rule), 압축 형식(Compression Format), 누락 데이터 정책(Missing-Data Policy)이 포함되어야 한다. 관절 각도는 도(Degree)인지 라디안(Radian)인지 명확해야 한다. 힘 값은 센서 좌표계와 부호 규칙(Sign Convention)을 지정해야 한다. 자세는 로봇에서 월드로의 변환인지, 월드에서 로봇으로의 변환인지 표시해야 한다.
+
+센서 선택은 전체 파이프라인에 영향을 준다. 센서는 작업에 필요한 정확도, 시야각(Field of View), 갱신 주기(Update Rate), 측정 범위(Range), 환경 강건성(Environmental Robustness)을 제공해야 한다. 인터페이스도 신뢰성 있는 타임스탬프와 보정을 지원해야 한다. 고해상도 센서라도 지연이 지나치게 크거나 다른 시스템과 동기화할 수 없다면 반드시 유용한 것은 아니다.
+
+각 센서는 고유한 식별자와 버전이 관리되는 구성 기록(Configuration Record)을 가져야 한다. 이 기록에는 모델명, 일련번호(Serial Number), 펌웨어 버전(Firmware Version), 보정 날짜, 장착 위치, 내부 파라미터(Intrinsic Parameter), 샘플링 주기, 노출 설정, 게인(Gain), 해상도, 통신 인터페이스가 포함될 수 있다. 이러한 메타데이터를 이용하면 물리 구성을 재현하고 데이터셋에 영향을 줄 수 있는 변경사항을 식별할 수 있다.
+
+로봇 구성도 동일한 수준으로 기록해야 한다. 데이터셋에는 로봇 플랫폼, 형태(Morphology), 링크 크기, 액추에이터 종류, 공구, 적재물(Payload), 제어기 버전, 안전 설정, 소프트웨어 빌드를 포함해야 한다. 하나의 그리퍼나 적재물로 수집된 궤적은 다른 구성의 동역학을 대표하지 않을 수 있다.
+
+시간 동기화(Time Synchronization)는 파이프라인에서 가장 중요한 구성요소 가운데 하나이다. 멀티모달 센서는 동일한 주기로 동작하지 않는다. 카메라는 초당 30프레임 또는 60프레임을 생성하고, LiDAR는 초당 10회 또는 20회 스캔하며, 촉각 센서는 수백 헤르츠, 관절 인코더는 1킬로헤르츠 이상으로 동작할 수 있다.
+
+모든 데이터 항목에는 실제 물리 측정 시점에 최대한 가까운 타임스탬프가 포함되어야 한다. 카메라 이미지가 노출된 시각은 처리된 이미지가 로깅 컴퓨터에 도착한 시각보다 더 중요하다. 모터 명령이 실제로 적용된 시점은 제어기가 명령을 계산한 시점과 다르다.
+
+하드웨어 타임스탬프(Hardware Timestamp)는 운영체제 스케줄링, 버퍼링, 네트워크 전송, 드라이버 지연으로 발생하는 불확실성을 줄이기 때문에 일반적으로 소프트웨어 타임스탬프보다 신뢰성이 높다. 가능하면 센서들이 공통 시계(Common Clock)를 사용해야 한다.
+
+시계 동기화 방법에는 정밀 시간 프로토콜(Precision Time Protocol), 네트워크 시간 프로토콜(Network Time Protocol), GNSS 시간, 트리거 신호(Trigger Signal), 공유 발진기(Shared Oscillator), 하드웨어 동기화 라인이 포함될 수 있다. 적절한 방법은 요구 정확도에 따라 달라진다. 느린 내비게이션에는 밀리초 수준의 동기화가 충분할 수 있지만, 접촉 중심 조작에는 마이크로초 또는 1밀리초 이하의 정확도가 필요할 수 있다.
+
+동기화 품질은 가정하는 것이 아니라 측정해야 한다. 데이터셋에는 시계 오프셋(Clock Offset), 드리프트(Drift), 지터(Jitter), 패킷 지연(Packet Delay), 동기화 상태를 기록해야 한다. 두 센서가 일시적으로 동기화를 잃었다면 해당 데이터는 표시해야 한다.
+
+하드웨어 동기화를 사용할 수 없는 경우 소프트웨어 동기화가 필요하다. 스트림은 가장 가까운 타임스탬프, 보간(Interpolation), 재샘플링(Resampling), 윈도우 기반 집계(Window-Based Aggregation)를 이용하여 정렬할 수 있다. 그러나 정렬 방식은 신호의 물리적 특성을 반영해야 한다.
+
+관절 위치는 인접한 샘플 사이에서 보간할 수 있다. 그러나 충돌 사건이나 이산적인 접촉 전환은 긴 시간 구간에 걸쳐 평균을 내서는 안 된다. LiDAR 스캔은 점들이 동시에 수집되는 것이 아니라 시간에 따라 수집되기 때문에 모션 보정(Motion Compensation)이 필요할 수 있다.
+
+관측 나이(Observation Age)도 추적해야 한다. 시각 특징은 전처리 때문에 이미지 노출 이후 50밀리초가 지나서 생성될 수 있다. 모델은 특징이 사용할 수 있게 된 시점뿐 아니라 원래 관측 시점을 알아야 한다.
+
+공간 보정(Spatial Calibration)은 두 번째 주요 정렬 문제이다. 각 센서는 서로 다른 위치와 방향에서 세계를 관측한다. 카메라 이미지, 깊이 지도, LiDAR 점, 촉각 측정값, 로봇 관절 상태는 좌표 변환을 통해 연결되어야 한다.
+
+카메라 내부 보정(Camera Intrinsic Calibration)은 초점거리, 주점(Principal Point), 렌즈 왜곡(Lens Distortion), 관련 영상 파라미터를 추정한다. 외부 보정(Extrinsic Calibration)은 카메라와 로봇 베이스, 엔드이펙터, LiDAR, 월드 좌표계 사이의 강체 변환(Rigid Transformation)을 추정한다.
+
+깊이 카메라 보정에는 컬러 센서와 깊이 센서 사이의 관계가 포함되어야 한다. LiDAR-카메라 보정은 3차원 점과 이미지 픽셀을 연결한다. 마이크 배열 보정은 각 마이크의 위치와 방향을 식별한다. 촉각 센서 보정은 지역 압력 좌표를 대응하는 로봇 링크나 손가락 끝 좌표계와 연결한다.
+
+보정 파라미터는 버전 관리하여 데이터셋과 함께 저장해야 한다. 카메라가 이동하거나, 공구가 교체되거나, 로봇 구조가 수리되면 이전 보정값은 더 이상 유효하지 않을 수 있다. 서로 다른 보정 버전에서 기록된 데이터를 명확한 메타데이터 없이 혼합해서는 안 된다.
+
+보정 불확실성도 표현해야 한다. 외부 파라미터는 완벽한 값이 아니라 추정값이다. 작은 회전 오차도 원거리에서 큰 공간 오차를 만들 수 있다. 가능하면 모델과 후속 도구에 신뢰도 또는 공분산(Covariance)을 제공해야 한다.
+
+온라인 보정 모니터링(Online Calibration Monitoring)은 운용 중 변화를 감지할 수 있다. 카메라와 로봇 링크 사이의 고정 관계는 일정해야 한다. 관측된 랜드마크나 알려진 기하 구조가 예상 변환과 더 이상 맞지 않으면 기계적 이동이나 보정 드리프트를 의심할 수 있다.
+
+좌표계는 명확한 계층을 따라야 한다. 일반적인 좌표계에는 월드(World), 지도(Map), 오도메트리(Odometry), 로봇 베이스(Robot Base), 개별 링크(Individual Link), 엔드이펙터(End Effector), 공구 중심점(Tool Center Point), 카메라, LiDAR, 레이더, 촉각 센서가 포함될 수 있다. 이러한 좌표계 사이의 관계는 변환 트리(Transformation Tree)에 기록해야 한다.
+
+좌표계 이름은 안정적이고 모호하지 않아야 한다. 여러 카메라가 존재하는데 단순히 "camera"라고 표시하는 것은 충분하지 않다. 데이터셋에는 전방 카메라, 후방 카메라, 손목 카메라, 검사 카메라를 구분해야 한다.
+
+원시 데이터 수집은 가능한 범위에서 원래 정보를 최대한 보존해야 한다. 압축, 필터링, 특징 추출은 나중에 중요해질 수 있는 세부정보를 제거할 수 있다. 저장 공간이 허용된다면 원시 이미지, 포인트 클라우드, 파형, 텔레메트리를 저장하고, 처리된 결과는 별도의 파생 아티팩트(Derived Artifact)로 생성해야 한다.
+
+보정과 과학적 분석에는 무손실(Lossless) 또는 약한 압축 형식이 더 적합하다. 장기 보관에는 더 강한 압축을 사용할 수 있지만, 미세 결함, 오디오 주파수, 깊이 정밀도, 촉각 패턴에 미치는 영향을 측정해야 한다.
+
+로깅 시스템(Logging System)은 높은 처리량과 결함 허용성(Failure Tolerance)을 갖도록 설계해야 한다. 여러 데이터 스트림을 손실 없이 처리하면서 로봇 제어를 차단하지 않아야 한다. 저장 지연이 안전이나 움직임에 영향을 주지 않도록 로깅은 하드 실시간 제어와 분리되어야 한다.
+
+버퍼는 일시적인 쓰기 지연을 흡수할 수 있지만, 지나친 버퍼링은 데이터 손실 위험을 높이고 타임스탬프 해석을 어렵게 만든다. 시스템은 버퍼 점유율, 저장 속도, 손실 패킷, 디스크 상태를 모니터링해야 한다.
+
+모든 기록 세션에는 매니페스트(Manifest)가 포함되어야 한다. 매니페스트는 로봇, 센서, 보정 버전, 소프트웨어 버전, 작업자, 환경, 작업, 시작 및 종료 시각, 날씨나 조명 조건, 알려진 이상 상황을 식별한다.
+
+임무 및 작업 문맥은 구조화된 이벤트로 기록해야 한다. 완전한 데이터셋은 센서 스트림만 포함해서는 안 된다. 작업이 언제 시작되었는지, 어떤 지시가 활성화되어 있었는지, 어떤 하위 작업이 수행 중이었는지, 접촉이 언제 발생했는지, 행동이 성공했는지, 실패 이유가 무엇인지를 표시해야 한다.
+
+상태기계 전환(State-Machine Transition)은 유용한 의미 경계를 제공한다. 내비게이션, 접근(Approach), 정렬(Alignment), 파지(Grasp), 들어 올리기(Lift), 검사(Inspection), 복구(Recovery), 완료(Completion) 상태를 이벤트 마커(Event Marker)로 저장할 수 있다. 이러한 마커는 긴 기록을 의미 있는 에피소드로 분할하는 데 도움을 준다.
+
+언어 데이터는 신중하게 처리해야 한다. 음성 또는 문자 지시는 타임스탬프, 화자 또는 출처, 인증 상태(Authentication Status), 원문, 정규화된 문장, 연결된 작업과 함께 기록해야 한다. 자동 음성 인식 결과에는 오류가 포함될 수 있으므로 원본 오디오와 별도로 유지해야 한다.
+
+작업자의 수정은 가치 있는 학습 신호이다. 사람이 목표를 변경하거나, 행동을 취소하거나, 실패 원인을 설명한다면 이러한 수정 사항을 앞선 관측 및 행동과 연결해야 한다. 이를 통해 선호 학습(Preference Learning), 지시 개선(Instruction Refinement), 복구 모델링(Recovery Modeling)이 가능해진다.
+
+행동 데이터는 명령된 행동(Commanded Motion), 계획된 행동(Planned Motion), 실제 실행된 행동(Executed Motion)을 구분해야 한다. 플래너가 생성한 궤적을 제어기가 한계나 외란 때문에 수정할 수 있다. 최종 액추에이터 명령은 원래 계획과 다를 수 있다.
+
+따라서 데이터셋에는 상위 수준 목표, 계획 궤적, 제어기 기준값(Controller Reference), 실제 관절 움직임, 액추에이터 출력, 안전 개입을 함께 기록해야 한다. 이를 통해 모델은 의도된 행동과 실제 실행된 행동의 차이를 학습할 수 있다.
+
+결과 라벨(Outcome Label)은 단순한 성공 또는 실패보다 더 상세해야 한다. 부분 성공, 시간 초과(Timeout), 인간 개입, 충돌 회피, 미끄러짐, 도달 불가능한 목표, 인식 오류, 계획 실패, 통신 손실은 더 풍부한 지도 신호를 제공한다.
+
+자동 이벤트 감지(Automatic Event Detection)는 라벨링을 지원할 수 있다. 힘 임계값으로 접촉을 식별하고, 객체 추적으로 움직임을 식별하고, 제어기 상태로 완료를 식별하고, 안전 로그로 제한 위반을 식별할 수 있다. 그러나 임계값 기반 자동 라벨은 오류를 만들 수 있으므로 신뢰도를 포함해야 한다.
+
+사람의 주석(Human Annotation)은 의미적이고 모호한 사건에서 여전히 중요하다. 주석자는 목표 객체, 작업 의도, 비정상 행동, 실패 원인, 장면 관계를 식별할 수 있다. 주석 도구는 하나의 센서만이 아니라 동기화된 멀티모달 스트림을 함께 보여주어야 한다.
+
+주석 지침(Annotation Guideline)은 정확해야 한다. 서로 다른 주석자가 "접촉", "미끄러짐", "차단된 경로", "성공적인 파지"를 다르게 해석할 수 있다. 정의, 예시, 충돌 해결 절차가 일관성을 높인다.
+
+주석자 간 일치도(Inter-Annotator Agreement)를 측정해야 한다. 일치도가 낮으면 라벨이 모호하거나 지침이 불충분하다는 의미이다. 단순히 주석량을 늘리기보다 라벨 정의를 개선해야 할 수 있다.
+
+데이터 분할(Data Segmentation)은 연속 기록을 학습 예제로 변환한다. 세그먼트는 고정 시간 구간, 상태 전환, 이벤트, 스킬, 전체 에피소드를 기준으로 정의할 수 있다. 분할 전략은 학습 작업과 일치해야 한다.
+
+짧은 윈도우는 접촉 감지나 지역 제어에 적합하다. 긴 윈도우는 작업 계획, 시간 추론, 복구 학습에 필요하다. 계층형 데이터셋은 세밀한 단계와 전체 임무 에피소드를 모두 보존할 수 있다.
+
+세그먼트 경계는 원인과 결과를 분리하지 않아야 한다. 파지 실패를 설명하는 윈도우에는 최종적으로 떨어진 객체만 포함하는 것이 아니라 접근, 접촉, 미끄러짐, 복구 과정이 포함되어야 한다.
+
+멀티모달 정렬 테이블(Multimodal Alignment Table)은 각 샘플이나 세그먼트를 여러 스트림의 대응 데이터와 연결할 수 있다. 하나의 이미지는 가장 가까운 로봇 상태, 최근 오디오 윈도우, LiDAR 스캔, 활성 지시, 행동 명령과 연결될 수 있다.
+
+정렬 테이블은 어떤 데이터를 선택했는지만 기록하는 것이 아니라 시간 차이와 정렬 방법도 포함해야 한다. 이를 통해 이후 동기화 품질에 따라 데이터를 필터링할 수 있다.
+
+불규칙한 데이터 스트림에서는 연속 시간 표현(Continuous-Time Representation)이 더 적합할 수 있다. 모든 모달리티를 하나의 고정 주기로 강제하는 대신 모델이 타임스탬프를 포함한 비동기 이벤트를 직접 처리하도록 할 수 있다. 이는 인위적인 복제나 보간을 줄인다.
+
+품질 보증(Quality Assurance)은 파이프라인 전체에 적용해야 한다. 자동 검사는 누락된 파일, 손상된 프레임, 불가능한 값, 반복된 타임스탬프, 단위 오류, 보정 불일치, 비정상 샘플링 주기를 감지할 수 있다.
+
+물리 일관성 검사(Physical Consistency Check)는 특히 중요하다. 관절 위치는 한계 안에 있어야 한다. 카메라 움직임은 로봇 운동학과 일치해야 한다. 객체 움직임은 특별한 이유 없이 물리적으로 불가능한 속도를 보여서는 안 된다. 카메라로 투영된 LiDAR 점은 실제 보이는 구조와 정렬되어야 한다.
+
+교차 모달 일관성 검사(Cross-Modal Consistency Check)는 숨겨진 오류를 탐지할 수 있다. 움직임을 나타내는 모터 명령은 고유감각 변화와 대응해야 한다. 접촉력은 실제 객체 근처에서 발생해야 한다. 음성 전사는 음성 활동 감지와 정렬되어야 한다.
+
+자동화된 파이프라인에서도 데이터 시각화(Data Visualization)는 중요하다. 엔지니어는 동기화된 비디오, 포인트 클라우드, 상태 그래프, 오디오, 이벤트 마커를 직접 확인해야 한다. 여러 모달리티를 함께 보면 시간 및 보정 오류가 명확하게 드러나는 경우가 많다.
+
+데이터 정제(Dataset Cleaning)는 사용할 수 없는 데이터를 조용히 수정하지 말고 제거하거나 표시해야 한다. 손상된 파일, 심각한 비동기, 보정 누락, 센서 포화, 작업자 실수는 문서화되어야 한다.
+
+데이터에는 품질 등급(Quality Level)을 부여할 수 있다. 고품질 샘플은 정밀 제어 학습에 사용하고, 품질이 낮은 샘플은 의미 사전학습이나 강건성 실험에 사용할 수 있다. 단순한 유지 또는 삭제의 이진 결정은 유용한 정보를 낭비할 수 있다.
+
+정규화 및 전처리는 재현 가능해야 한다. 이미지 크기 조정, 깊이 스케일링, 포인트 클라우드 필터링, 오디오 정규화, 관절 상태 스케일링, 언어 토큰화는 버전 관리되는 코드로 정의해야 한다.
+
+학습, 검증, 시험 데이터 분할에서는 데이터 누출(Data Leakage)을 방지해야 한다. 동일한 에피소드의 연속 프레임은 거의 동일하기 때문에 무작위로 서로 다른 분할에 배치해서는 안 된다. 일반화 목표에 따라 임무, 객체 인스턴스, 환경, 로봇, 사이트, 시간 구간을 기준으로 분할해야 한다.
+
+사이트 간 평가(Cross-Site Evaluation)는 피지컬 AI에서 중요하다. 동일한 공장에서 학습하고 시험한 모델은 배경이나 레이아웃 지름길을 사용할 수 있다. 전체 환경을 시험용으로 제외하면 전이 성능을 더 현실적으로 평가할 수 있다.
+
+교차 체화 분할(Cross-Embodiment Split)은 서로 다른 로봇으로 일반화되는지를 시험한다. 교차 객체 분할(Cross-Object Split)은 개방형 조작 성능을 평가한다. 교차 조건 분할(Cross-Condition Split)은 조명, 날씨, 적재물, 표면, 센서 변화를 시험한다.
+
+데이터 균형(Data Balancing)은 빈도와 중요도를 함께 고려해야 한다. 일상적인 내비게이션은 수백만 개의 예제를 생성하지만 충돌, 실패, 복구 사건은 드물다. 균등 샘플링만 사용하면 모델이 드물지만 중요한 상황을 무시할 수 있다.
+
+목표 기반 수집(Targeted Collection), 리플레이(Replay), 시뮬레이션, 오버샘플링(Oversampling), 가중 손실(Weighted Objective)을 통해 드문 사건의 영향을 높일 수 있다. 합성 데이터는 실패 사례를 확장할 수 있지만, 실제 사례도 검증에 반드시 필요하다.
+
+개인정보 보호, 보안, 접근 제어도 파이프라인의 일부이다. 로봇 데이터에는 사람, 음성, 문서, 시설 배치, 장비 식별자, 독점 절차가 포함될 수 있다.
+
+민감한 정보는 최소화하고, 익명화하고, 암호화하며, 정책에 따라 저장해야 한다. 접근 로그와 데이터셋 권한은 누가 각 데이터 범주를 열람하거나 수정할 수 있는지를 기록해야 한다.
+
+데이터 출처 추적(Data Provenance)은 필수적이다. 모든 파생 예제는 원본 기록, 보정 정보, 전처리 버전, 주석 출처, 변환 이력으로 추적할 수 있어야 한다. 이를 통해 오류 수정과 모델 감사를 수행할 수 있다.
+
+데이터셋 버전은 학습용으로 공개된 이후에는 변경 불가능해야 한다. 수정이 필요한 경우 기존 파일을 조용히 바꾸지 말고 새로운 버전을 생성해야 한다. 모델 기록은 어떤 데이터셋 버전을 사용했는지 정확하게 표시해야 한다.
+
+지속적인 데이터 수집은 분포 드리프트(Distribution Drift)를 발생시킨다. 센서는 노화하고, 환경은 변하며, 공구는 교체되고, 소프트웨어는 갱신되고, 작업자는 새로운 용어를 사용한다. 파이프라인은 최근 데이터가 기존 학습 분포와 크게 달라지는지를 모니터링해야 한다.
+
+드리프트 감지(Drift Detection)는 임베딩 분포, 센서 통계, 실패율, 작업 성능을 비교할 수 있다. 큰 변화가 감지되면 추가 라벨링, 재보정, 모델 재학습이 필요할 수 있다.
+
+능동학습(Active Learning)은 어떤 데이터에 사람 검토를 우선 적용할지를 결정할 수 있다. 모든 샘플을 균등하게 라벨링하는 대신 불확실하고, 새로운 특성이 있고, 위험도가 높거나, 모델 간 불일치가 큰 사례를 선택할 수 있다.
+
+플릿 학습(Fleet Learning)은 여러 로봇의 데이터를 결합할 수 있다. 기록을 비교 가능하게 유지하려면 공유 스키마, 동기화된 메타데이터, 좌표 규칙, 버전 관리가 필요하다.
+
+지역 사이트 정보는 비공개로 유지해야 할 수 있다. 연합학습(Federated Learning)이나 분산학습을 사용하면 모든 원시 데이터를 이전하지 않고 모델을 갱신할 수 있지만, 일관성과 검증이 더 복잡해진다.
+
+최종 학습 데이터셋은 원시 데이터와 구조화된 데이터 보기를 모두 제공해야 한다. 원시 스트림은 향후 연구를 지원하고, 구조화된 에피소드는 효율적인 모델 학습을 지원한다. 객체 추적 기록, 장면 그래프(Scene Graph), 이벤트 기록, 정렬된 센서 윈도우, 행동 청크(Action Chunk)를 파생 표현으로 생성할 수 있다.
+
+파이프라인은 여러 학습 목표를 지원해야 한다. 대조학습은 모달리티를 정렬할 수 있다. 복원(Reconstruction)은 마스킹된 신호를 복구할 수 있다. 예측(Prediction)은 미래 상태를 추정할 수 있다. 모방학습(Imitation Learning)은 관측을 행동으로 연결할 수 있다. 언어 모델링(Language Modeling)은 지시와 궤적을 연결할 수 있다.
+
+하나의 데이터셋이 이러한 목표를 지원하려면 시간, 기하학, 작업 의미, 출처 정보가 보존되어야 한다. 데이터를 너무 일찍 고정 라벨로 축소하면 향후 활용 가능성이 제한될 수 있다.
+
+평가 데이터도 학습 데이터와 동일한 수준으로 신중하게 수집해야 한다. 벤치마크 에피소드에는 대표적인 정상 작업, 어려운 조건, 드문 실패, 분포 변화가 포함되어야 한다. 모델 개발 데이터와는 분리되어야 한다.
+
+폐루프 평가(Closed-Loop Evaluation)는 기록된 데이터만으로 충분하지 않지만, 고품질 정렬 로그는 로봇의 성공 및 실패 원인을 분석하는 데 필수적이다. 모든 행동, 관측, 상태 추정, 안전 개입, 작업자 수정 내용을 재구성할 수 있어야 한다.
+
+데이터셋 규모가 커지면 효율적인 저장과 검색이 중요해진다. 계층형 저장소는 최근 데이터나 자주 사용하는 데이터를 빠른 디스크에 보관하고, 원시 데이터는 느린 저장소에 아카이빙할 수 있다. 메타데이터 인덱스를 이용하면 작업, 객체, 센서, 실패, 위치, 품질 기준으로 검색할 수 있다.
+
+임베딩 기반 검색(Embedding-Based Retrieval)은 의미적 또는 물리적으로 유사한 에피소드를 찾을 수 있다. 엔지니어는 바퀴 미끄러짐, 커넥터 삽입 실패, 예상하지 못한 인간 개입이 포함된 모든 사례를 검색할 수 있다.
+
+멀티모달 데이터 파이프라인의 장기적인 목표는 가능한 많은 로봇 데이터를 기록하는 것이 아니다. 학습, 평가, 진단, 지속적인 개선에 재사용할 수 있는 신뢰할 만한 물리적 상호작용 증거를 구축하는 것이다.
+
+신뢰할 수 있는 파이프라인은 무엇을 관측했는지, 언제 관측했는지, 센서가 어디에 있었는지, 로봇이 무엇을 하고 있었는지, 어떤 지시가 활성화되어 있었는지, 측정값이 얼마나 신뢰할 수 있었는지, 이후 어떤 결과가 발생했는지를 알아야 한다.
+
+시간 동기화는 여러 센서의 사건을 연결한다. 공간 보정은 여러 좌표계의 관측을 연결한다. 의미 주석(Semantic Annotation)은 원시 측정값을 작업과 결과에 연결한다. 출처 추적은 모든 파생 예제를 원본 데이터와 연결한다.
+
+이러한 메커니즘을 결합하면 독립적인 센서 로그가 일관된 멀티모달 데이터셋으로 변환된다. 이 데이터셋은 비전-언어-행동 모델(Vision-Language-Action Model), 월드 모델(World Model), 로봇 정책(Robot Policy), 이상 탐지기(Anomaly Detector), 피지컬 AI 파운데이션 모델을 학습시키는 기반이 된다.
+
+따라서 가장 강력한 피지컬 AI 시스템은 데이터 수집과 정렬을 모델 학습 전의 별도 준비 작업이 아니라 모델 아키텍처의 일부로 취급할 것이다. 정렬이 불량한 데이터는 모델 크기와 관계없이 지능의 상한선을 제한한다.
+
+완전한 로봇 학습 시스템에서 멀티모달 데이터 수집 및 정렬 파이프라인은 물리적 경험과 기계학습을 연결하는 다리가 된다. 연속적이고, 비동기적이며, 노이즈가 많은 로봇 운용 데이터를 구조화되고 검증 가능한 학습 증거로 변환하며, 이를 통해 물리적으로 접지되고, 일반화 가능하며, 안전한 행동이 학습될 수 있도록 한다.
+
+##  
+
+## 3.9 Multi Modal Tokenization and Vocabulary Design [w/Code]
+
+![](images/image9.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+Multimodal tokenization is the process of converting heterogeneous information such as language, images, video, point clouds, audio, tactile signals, proprioception, maps, and robot actions into discrete or continuous units that a foundation model can process. Vocabulary design determines how these units are represented, identified, organized, and connected across modalities. In Physical AI, tokenization is not merely a preprocessing step. It defines what aspects of the physical world the model can express, compare, remember, predict, and control.
+
+Language models operate on text tokens derived from words, subwords, characters, or byte sequences. A multimodal robot model must extend this principle to sensory and action data. Visual patches may become image tokens, point-cloud regions may become geometric tokens, audio windows may become acoustic tokens, joint states may become proprioceptive tokens, and motor commands may become action tokens. The model then processes these units through a shared or coordinated architecture.
+
+The main difficulty is that each modality has a different structure. Language is symbolic and sequential. Images are dense and spatial. Point clouds are sparse and unordered. Audio is continuous and temporal. Tactile signals are local and high frequency. Robot actions may be continuous, discrete, hierarchical, or embodiment specific. A single tokenization method cannot preserve all of these structures equally well.
+
+Effective multimodal tokenization must balance compression and information preservation. A token sequence that is too detailed becomes computationally expensive. A sequence that is overly compressed may lose small obstacles, subtle defects, short contact events, or precise action information. The correct token granularity depends on the task, physical risk, available hardware, and required temporal or spatial accuracy.
+
+Text tokenization usually relies on subword vocabularies. Common words may be represented by one token, while rare technical terms are divided into smaller units. For Physical AI, the text vocabulary should handle robot terminology, component identifiers, coordinate names, tool labels, fault codes, units, and operational commands.
+
+Generic language tokenizers may divide specialized terms into inefficient or ambiguous fragments. A component name such as "J4_connector," a robot frame such as "base_link," or a command such as "emergency_stop" may be split into many unrelated tokens. Domain-specific vocabulary extensions can improve efficiency and preserve semantic meaning.
+
+However, adding every component name or site-specific term to the vocabulary is impractical. A hybrid design can preserve general subword tokenization while reserving structured tokens for frequently used robot entities, frames, tools, tasks, and safety states.
+
+Special tokens are useful for identifying modality boundaries and data roles. Tokens such as image start, image end, audio start, robot state, action start, task goal, map context, and safety constraint indicate how each sequence segment should be interpreted.
+
+Without explicit modality identifiers, numerically similar vectors from different sensors may be confused. A value representing joint angle should not be interpreted as an image feature or audio amplitude. Modality embeddings, type embeddings, and source identifiers help preserve these distinctions.
+
+Visual tokenization commonly divides an image into fixed patches. Each patch is projected into a visual embedding and processed by a transformer. Smaller patches preserve detail but produce longer sequences. Larger patches reduce computation but may hide small objects or defects.
+
+For robot navigation, coarse visual tokens may be sufficient for walls, corridors, and large obstacles. Inspection or manipulation may require finer resolution around connectors, cracks, cables, fasteners, and contact regions. A fixed visual resolution is therefore inefficient across all tasks.
+
+Adaptive visual tokenization can allocate more tokens to task-relevant areas. A low-resolution representation preserves global context, while selected regions are encoded at higher resolution. Language instructions, object proposals, motion cues, or uncertainty can guide this selection.
+
+Object-centric tokenization represents detected or tracked objects rather than raw image patches. Each object token may contain semantic identity, bounding region, pose, dimensions, motion, confidence, and appearance features.
+
+Object tokens make high-level reasoning more efficient because the model can reason directly about entities such as people, tools, machines, and containers. However, object-centric processing depends on successful detection and may miss unknown objects, free space, surface defects, or object parts.
+
+A hierarchical visual vocabulary can include scene tokens, object tokens, part tokens, and dense local tokens. Scene tokens support global understanding, object tokens support semantic planning, part tokens support manipulation, and dense features support precise physical interaction.
+
+Video tokenization adds a temporal dimension. Encoding every patch from every frame creates extremely long sequences. Temporal subsampling, tubelet tokens, motion tokens, event tokens, and compressed track representations reduce this cost.
+
+A tubelet token represents a small spatial region across several consecutive frames. This captures local motion while reducing the number of independent tokens. Object-track tokens preserve the identity and movement of entities over time.
+
+Event-driven video tokenization creates new tokens only when meaningful changes occur. A person entering the scene, an object moving, a warning light activating, or an obstacle appearing can generate event tokens. Stable background information remains compressed.
+
+Point-cloud tokenization must handle irregular three-dimensional geometry. Raw point tokens preserve detail but are computationally expensive and sensitive to varying point density. Voxelization groups points into three-dimensional cells and produces sparse geometric tokens.
+
+Local point clusters can also become region tokens. Each region may include centroid, size, orientation, surface features, color, density, and semantic information. Hierarchical grouping creates point, region, object, and scene-level tokens.
+
+The vocabulary of a 3D model should distinguish physical entities from coordinate values. A token may represent an object category, while continuous embeddings represent its position and dimensions. Converting every coordinate into a discrete symbol may reduce precision.
+
+Spatial quantization divides the physical environment into bins. Position, distance, angle, and size can be represented by discrete tokens. This enables language-like generation of poses and trajectories, but quantization error must be controlled.
+
+Coarse spatial bins may be sufficient for navigation goals such as room or zone selection. Manipulation requires much finer precision. A hierarchical spatial vocabulary can represent a coarse region first and a local offset afterward.
+
+Relative coordinates are often more useful than global coordinates. The position of an object relative to the robot, camera, end effector, or target may remain stable across environments. Tokens should clearly identify the reference frame.
+
+A position token without coordinate-frame information is ambiguous. The vocabulary should therefore include frame identifiers such as map frame, robot base, camera, tool center point, or object-local frame.
+
+Audio tokenization can use waveform segments, spectral patches, learned codec units, phonetic tokens, or acoustic event tokens. Raw waveforms preserve complete information but create long sequences. Spectrogram patches provide a structured time-frequency representation.
+
+Speech and environmental sound may require different vocabularies. Speech tokenization emphasizes phonetic and linguistic content, while environmental audio requires event classes, frequency patterns, source direction, intensity, and duration.
+
+A unified acoustic encoder may generate continuous embeddings, while higher-level discrete tokens represent speech segments, alarms, impacts, machine sounds, or source changes. This reduces the amount of audio information passed to a large multimodal model.
+
+Audio tokens should preserve timing. A sound event must be connected to the correct visual frame, robot state, and action. Temporal position embeddings or explicit timestamps can represent when the event occurred.
+
+Tactile tokenization faces a similar challenge. High-frequency pressure maps, force signals, and tactile images cannot all be transmitted directly to a large model. Local encoders can transform them into contact-state tokens.
+
+Examples include no contact, first contact, stable pressure, excessive force, edge contact, incipient slip, full slip, impact, deformation, and release. Continuous features can preserve detailed pressure distribution and force direction.
+
+The tactile vocabulary should not completely replace raw physical values. A token such as "high pressure" is task dependent. The same force may be normal for a metal component but dangerous for a fragile package. Continuous values, units, sensor limits, and language context remain necessary.
+
+Proprioceptive tokenization represents the robot's internal state. One approach uses a single vector containing all joint positions, velocities, and actuator states. This is efficient but tightly coupled to one robot morphology.
+
+A more general design creates tokens for individual joints, links, wheels, sensors, end effectors, and tools. Each token contains identity, state, limits, parent-child relationships, and uncertainty.
+
+Graph-based tokenization reflects the kinematic structure of the robot. Joint and link tokens form nodes, while mechanical connections form edges. This supports robots with different numbers of joints and body configurations.
+
+Morphology tokens can describe link length, joint axis, actuator type, payload capacity, sensor location, and action capability. A general Physical AI model can use these tokens to understand the embodiment on which it is operating.
+
+Action tokenization is one of the most important vocabulary-design problems. Robot actions may be represented as joint positions, velocity commands, torques, end-effector poses, trajectories, skills, or symbolic task commands.
+
+Continuous actions preserve precision but are difficult to generate directly with a language-style decoder. Discrete action tokens simplify autoregressive modeling but introduce quantization error.
+
+Uniform action quantization divides each action dimension into fixed bins. This is simple but may waste resolution in rarely used ranges and provide insufficient precision near sensitive control regions.
+
+Data-dependent quantization can allocate more tokens to frequently used or physically important ranges. Vector quantization can represent common multidimensional action patterns as learned codebook entries.
+
+A learned action vocabulary may contain motion primitives such as approach, align, grasp, lift, rotate, insert, retract, and stop. These high-level tokens can be combined with continuous parameters specifying direction, distance, force, speed, or target pose.
+
+Hierarchical action tokenization is particularly useful. A skill token specifies what type of action should occur, while parameter tokens specify how it should be executed. A low-level controller then converts the result into real-time actuator commands.
+
+This separation avoids requiring a foundation model to generate every motor update. The model can produce a short sequence such as approach target, align tool, insert slowly, monitor force, while deterministic controllers handle the precise execution.
+
+Action chunking also reduces sequence length. Instead of representing one control command per time step, a token or latent vector can represent a short segment of future actions. The chunk must remain short enough to allow replanning when the environment changes.
+
+Vocabulary design must address shared and modality-specific tokens. A fully shared vocabulary may encourage cross-modal transfer, but a visual region and an action command should not be treated as interchangeable symbols.
+
+One approach uses separate modality vocabularies with projection into a shared embedding space. Another approach uses one global token space with reserved ranges for text, vision, audio, state, and action.
+
+Separate vocabularies preserve specialized structure and reduce accidental collisions. A shared space simplifies autoregressive generation and enables direct modeling of mixed sequences. Hybrid designs are often most practical.
+
+A hybrid vocabulary can contain universal semantic tokens, modality-specific tokens, structural tokens, and continuous embeddings. Universal tokens represent concepts such as object identity, movement, contact, failure, and completion. Modality-specific tokens preserve raw perceptual or action information.
+
+Structural tokens describe sequence organization. They may identify episode start, observation, instruction, plan, action, outcome, error, recovery, and episode end. This creates a machine-readable grammar for robot experience.
+
+For example, a training episode may contain a task token, language instruction, visual observations, robot-state tokens, action tokens, and an outcome token. The model learns not only individual modalities but also the causal and temporal structure connecting them.
+
+Role tokens can distinguish measured, predicted, planned, and executed values. A planned trajectory should not be confused with the actual robot motion. A predicted force should not be treated as a sensor measurement.
+
+Source tokens can identify whether information comes from a camera, operator, digital twin, simulator, perception module, controller, or memory database. Provenance becomes part of the model input.
+
+This is important for safety. A text instruction observed on a wall should not have the same authority as a verified operator command. Trust-level and authorization tokens can distinguish executable instructions from untrusted environmental content.
+
+Temporal token design is essential because robot data is asynchronous. Absolute timestamps can be encoded directly, but large numerical values may be difficult for a model to use. Relative-time tokens often provide more useful relationships.
+
+Tokens can represent elapsed time since the previous event, age of observation, expected duration, deadline, or control period. Continuous time embeddings can complement discrete temporal categories.
+
+Irregular event streams should not always be forced into fixed time steps. An asynchronous vocabulary can represent events only when they occur, each with a timestamp or time-delta embedding.
+
+This reduces redundancy in stable periods while preserving rare and important events. However, continuous sensor dynamics may still require local sequence encoders before event extraction.
+
+Spatial and temporal resolution should be task dependent. A navigation instruction may tolerate decimeter-level position tokens and second-level temporal summaries. Insertion and contact tasks may require millimeter and millisecond resolution.
+
+Dynamic tokenization can change granularity according to mission phase. Coarse tokens may be used during long-distance travel, while fine geometric, tactile, and action tokens are activated near contact.
+
+Uncertainty should also be tokenized or embedded. Sensor confidence, calibration quality, ambiguity, and out-of-distribution scores affect how information should be interpreted.
+
+A visual object token with low confidence should not have the same influence as a verified object. An uncertain pose may require active sensing before action.
+
+Uncertainty can be represented through continuous confidence values, categorical reliability tokens, probability distributions, or multiple candidate tokens. Preserving multiple hypotheses may be safer than selecting one uncertain interpretation too early.
+
+Missing information requires explicit vocabulary elements. A missing sensor value should not be represented by zero because zero may be physically meaningful. Tokens such as missing, delayed, invalid, saturated, or not calibrated can describe sensor state.
+
+Mask tokens are useful for self-supervised learning. The model learns to reconstruct masked image regions, action segments, audio intervals, or robot states from surrounding multimodal context.
+
+Vocabulary size affects both model capacity and efficiency. A very small vocabulary causes long sequences and ambiguous tokens. An excessively large vocabulary increases embedding memory, sparsity, and training difficulty.
+
+Frequently used concepts should have compact representations, while rare concepts can be composed from smaller tokens. Domain-specific expansion should be controlled by measured frequency and utility.
+
+Learned vector-quantized vocabularies can discover recurring sensory or action patterns automatically. A codebook maps continuous encoder outputs to discrete latent tokens. This allows transformer models to process compressed sensory sequences.
+
+However, codebook tokens may be difficult to interpret. A token identifier does not automatically correspond to a human-understandable concept. Codebook collapse may also occur when only a small subset of entries is used.
+
+Commitment losses, codebook balancing, hierarchical codebooks, and semantic supervision can improve learned token usage. Researchers should evaluate both reconstruction quality and downstream physical performance.
+
+Tokenizer training data strongly influences the resulting vocabulary. A tokenizer trained mainly on normal navigation may poorly represent collisions, contact, failure, or recovery. Rare but safety-critical events should be included.
+
+Cross-embodiment data is also important. A vocabulary learned on one robot may encode body-specific patterns that do not transfer to another. Morphology-aware and action-normalized representations improve generalization.
+
+Token order affects model interpretation. A multimodal sequence may be organized by modality blocks, chronological events, task hierarchy, or causal structure. Each ordering has advantages.
+
+Modality-block ordering groups all images, states, and actions separately. This is simple but may weaken temporal correspondence. Chronological ordering preserves event flow but creates rapidly changing modality types.
+
+Interleaved chronological sequences are often suitable for robot experience. An observation is followed by state, action, result, and updated observation. Structural tokens make this sequence understandable.
+
+Causal masking should reflect the intended learning task. During action prediction, the model must not access future observations. During representation learning, bidirectional attention may be allowed.
+
+A single dataset may therefore require several tokenized views. Autoregressive policy learning uses causal sequences, while masked modeling or contrastive pretraining uses bidirectional context.
+
+Positional encoding must reflect more than one-dimensional token order. Visual tokens require two-dimensional position. Point-cloud tokens require three-dimensional coordinates. Video and robot trajectories require time.
+
+Factorized positional encodings can represent modality position, spatial position, temporal position, coordinate frame, and hierarchy separately. This is often more effective than forcing all information into one scalar sequence index.
+
+Token compression must be evaluated using task-level metrics. High reconstruction quality does not guarantee successful robot behavior. A tokenizer may reconstruct visual appearance while losing small obstacles or contact-relevant geometry.
+
+Evaluation should include semantic retention, geometric precision, temporal accuracy, action smoothness, rare-event preservation, and closed-loop task success.
+
+Modality-ablation tests can reveal whether token design preserves useful cross-modal relationships. If removing proprioceptive tokens does not affect reachability prediction, the representation may not connect body state with vision.
+
+Counterfactual tests can modify one token group while preserving others. Changing a tool token should alter the reachable action set. Changing a safety-constraint token should modify the plan. Changing a tactile-slip token should trigger a different control response.
+
+Vocabulary consistency across training and deployment is essential. Tokenizer versions, codebooks, normalization parameters, coordinate conventions, and special-token definitions must be recorded.
+
+Changing the tokenizer can alter model behavior even when the model architecture remains unchanged. A new visual patch size, action binning scheme, or text vocabulary may invalidate existing checkpoints.
+
+Tokenizers and models should therefore be versioned together. Conversion tools may be needed when migrating datasets or models to a revised vocabulary.
+
+Efficient edge deployment benefits from token reduction. Local sensor encoders can convert raw streams into compact tokens before passing them to a large foundation model. This reduces memory, bandwidth, and inference cost.
+
+However, compression should remain reversible enough for validation. Critical decisions may require access to the original sensor data or high-resolution local features.
+
+A hierarchical architecture can keep raw control and safety data in local deterministic systems while providing semantic summaries to the foundation model. The model receives enough information for planning without controlling every low-level detail.
+
+The long-term objective of multimodal tokenization is to create a vocabulary through which a Physical AI system can represent both meaning and physical reality. The vocabulary must describe objects, spaces, body state, contact, motion, uncertainty, goals, actions, and outcomes.
+
+A successful design will not force all modalities into an identical form. It will preserve the structure that makes each modality useful while creating shared interfaces for alignment, reasoning, memory, and generation.
+
+Text tokens provide semantic composition. Visual and geometric tokens provide environmental evidence. Audio and tactile tokens provide events and physical interaction. Proprioceptive tokens provide embodiment. Action tokens provide executable intent.
+
+Structural, temporal, spatial, confidence, source, and authority tokens connect these elements into a coherent robot experience.
+
+For Physical AI, vocabulary design ultimately determines what the model is capable of thinking about. Information omitted during tokenization cannot be recovered by a larger transformer. Poor action bins limit control precision, weak spatial tokens limit grounding, and missing uncertainty tokens encourage overconfidence.
+
+A reliable multimodal foundation model will therefore treat tokenization as part of system architecture, not as a fixed preprocessing utility. Token granularity, vocabulary structure, coordinate frames, temporal encoding, authority, and physical precision must all be designed according to the robot's tasks and risks.
+
+Within this architecture, multimodal tokenization becomes the bridge between continuous physical experience and foundation-model computation. It transforms heterogeneous sensor streams, body states, instructions, and actions into structured units from which grounded perception, reasoning, prediction, and safe embodied behavior can emerge.
+
+멀티모달 토큰화(Multimodal Tokenization)는 언어, 이미지, 비디오, 포인트 클라우드(Point Cloud), 오디오(Audio), 촉각 신호(Tactile Signal), 고유감각(Proprioception), 지도(Map), 로봇 행동(Robot Action)과 같은 이질적인 정보를 파운데이션 모델(Foundation Model)이 처리할 수 있는 이산적 또는 연속적인 단위로 변환하는 과정이다. 어휘 설계(Vocabulary Design)는 이러한 단위를 여러 모달리티(Modality)에 걸쳐 어떻게 표현하고, 식별하고, 조직하고, 연결할지를 결정한다. 피지컬 AI에서 토큰화는 단순한 전처리 단계가 아니다. 이는 모델이 물리 세계의 어떤 측면을 표현하고, 비교하고, 기억하고, 예측하고, 제어할 수 있는지를 정의한다.
+
+언어 모델은 단어, 하위 단어(Subword), 문자, 바이트 시퀀스로부터 생성된 텍스트 토큰(Text Token)을 기반으로 동작한다. 멀티모달 로봇 모델은 이 원리를 감각 및 행동 데이터로 확장해야 한다. 시각 패치는 이미지 토큰(Image Token)이 되고, 포인트 클라우드 영역은 기하 토큰(Geometric Token)이 되며, 오디오 구간은 음향 토큰(Acoustic Token)이 되고, 관절 상태는 고유감각 토큰(Proprioceptive Token)이 되며, 모터 명령은 행동 토큰(Action Token)이 될 수 있다. 이후 모델은 이러한 단위를 공유되거나 조정된 아키텍처를 통해 처리한다.
+
+핵심적인 어려움은 각 모달리티가 서로 다른 구조를 가진다는 점이다. 언어는 상징적이고 순차적이다. 이미지는 밀집되고 공간적이다. 포인트 클라우드는 희소하고 순서가 없다. 오디오는 연속적이고 시간적이다. 촉각 신호는 지역적이며 고주파이다. 로봇 행동은 연속적이거나 이산적일 수 있고, 계층적이거나 체화별(Embodiment-Specific)일 수도 있다. 하나의 토큰화 방식으로 이러한 모든 구조를 동일하게 보존할 수는 없다.
+
+효과적인 멀티모달 토큰화는 압축과 정보 보존 사이의 균형을 맞춰야 한다. 지나치게 세밀한 토큰 시퀀스는 계산 비용이 커진다. 지나치게 압축된 시퀀스는 작은 장애물, 미세한 결함, 짧은 접촉 이벤트, 정밀한 행동 정보를 잃을 수 있다. 적절한 토큰 세분성(Token Granularity)은 작업, 물리적 위험, 사용 가능한 하드웨어, 요구되는 시간 또는 공간 정확도에 따라 달라진다.
+
+텍스트 토큰화는 일반적으로 하위 단어 어휘(Subword Vocabulary)를 사용한다. 자주 사용되는 단어는 하나의 토큰으로 표현하고, 드문 기술 용어는 더 작은 단위로 분할할 수 있다. 피지컬 AI에서 텍스트 어휘는 로봇 전문 용어, 부품 식별자(Component Identifier), 좌표계 이름, 공구 라벨, 고장 코드, 단위, 운용 명령을 처리할 수 있어야 한다.
+
+범용 언어 토크나이저(Tokenizer)는 전문 용어를 비효율적이거나 모호한 단위로 분할할 수 있다. "J4_connector"와 같은 부품 이름, "base_link"와 같은 로봇 좌표계, "emergency_stop"과 같은 명령이 서로 관련 없는 여러 토큰으로 나뉠 수 있다. 도메인 특화 어휘 확장(Domain-Specific Vocabulary Extension)은 효율성을 높이고 의미를 보존할 수 있다.
+
+그러나 모든 부품 이름이나 현장 특화 용어를 어휘에 추가하는 것은 현실적이지 않다. 하이브리드 설계(Hybrid Design)는 일반적인 하위 단어 토큰화를 유지하면서 자주 사용되는 로봇 객체, 좌표계, 공구, 작업, 안전 상태를 위한 구조화 토큰(Structured Token)을 별도로 예약할 수 있다.
+
+특수 토큰(Special Token)은 모달리티 경계와 데이터 역할을 식별하는 데 유용하다. 이미지 시작(Image Start), 이미지 종료(Image End), 오디오 시작(Audio Start), 로봇 상태(Robot State), 행동 시작(Action Start), 작업 목표(Task Goal), 지도 문맥(Map Context), 안전 제약(Safety Constraint)과 같은 토큰은 각 시퀀스 구간을 어떻게 해석해야 하는지를 나타낸다.
+
+명시적인 모달리티 식별자가 없다면 서로 다른 센서의 수치적으로 유사한 벡터가 혼동될 수 있다. 관절 각도를 나타내는 값은 이미지 특징이나 오디오 진폭으로 해석되어서는 안 된다. 모달리티 임베딩(Modality Embedding), 타입 임베딩(Type Embedding), 소스 식별자(Source Identifier)는 이러한 차이를 유지하는 데 도움을 준다.
+
+시각 토큰화(Visual Tokenization)는 일반적으로 이미지를 고정된 패치로 나눈다. 각 패치는 시각 임베딩으로 투영되고 트랜스포머(Transformer)가 처리한다. 작은 패치는 세부정보를 보존하지만 시퀀스 길이가 증가한다. 큰 패치는 계산량을 줄이지만 작은 객체나 결함을 숨길 수 있다.
+
+로봇 내비게이션에서는 벽, 복도, 대형 장애물을 처리하기 위해 거친 시각 토큰만으로 충분할 수 있다. 검사나 조작에서는 커넥터, 균열, 케이블, 체결 부품(Fastener), 접촉 영역 주변의 더 높은 해상도가 필요할 수 있다. 따라서 고정된 시각 해상도를 모든 작업에 적용하는 것은 비효율적이다.
+
+적응형 시각 토큰화(Adaptive Visual Tokenization)는 작업과 관련된 영역에 더 많은 토큰을 할당할 수 있다. 저해상도 표현은 전역 문맥을 보존하고, 선택된 영역은 더 높은 해상도로 인코딩한다. 언어 지시, 객체 후보(Object Proposal), 움직임 단서, 불확실성이 이러한 선택을 안내할 수 있다.
+
+객체 중심 토큰화(Object-Centric Tokenization)는 원시 이미지 패치 대신 검출되거나 추적된 객체를 표현한다. 각 객체 토큰은 의미 정체성, 경계 영역, 자세(Pose), 크기, 움직임, 신뢰도, 외형 특징을 포함할 수 있다.
+
+객체 토큰은 모델이 사람, 공구, 기계, 용기와 같은 객체를 직접 추론할 수 있도록 하므로 상위 수준 추론을 효율적으로 만든다. 그러나 객체 중심 처리는 성공적인 객체 검출에 의존하며, 알려지지 않은 객체, 자유 공간(Free Space), 표면 결함, 객체의 일부를 놓칠 수 있다.
+
+계층형 시각 어휘(Hierarchical Visual Vocabulary)는 장면 토큰(Scene Token), 객체 토큰, 부품 토큰(Part Token), 밀집 지역 토큰(Dense Local Token)을 포함할 수 있다. 장면 토큰은 전역 이해를 지원하고, 객체 토큰은 의미 계획(Semantic Planning)을 지원하며, 부품 토큰은 조작을 지원하고, 밀집 특징은 정밀한 물리 상호작용을 지원한다.
+
+비디오 토큰화(Video Tokenization)는 시간 차원을 추가한다. 모든 프레임의 모든 패치를 인코딩하면 매우 긴 시퀀스가 생성된다. 시간 다운샘플링(Temporal Subsampling), 튜블릿 토큰(Tubelet Token), 움직임 토큰(Motion Token), 이벤트 토큰(Event Token), 압축된 추적 표현이 이러한 비용을 줄인다.
+
+튜블릿 토큰은 여러 연속 프레임에 걸친 작은 공간 영역을 나타낸다. 이는 독립적인 토큰 수를 줄이면서 지역적 움직임을 포착한다. 객체 추적 토큰(Object-Track Token)은 객체의 정체성과 시간에 따른 움직임을 유지한다.
+
+이벤트 기반 비디오 토큰화(Event-Driven Video Tokenization)는 의미 있는 변화가 발생할 때만 새로운 토큰을 생성한다. 사람이 장면에 진입하거나, 객체가 움직이거나, 경고등이 켜지거나, 장애물이 나타나면 이벤트 토큰이 생성될 수 있다. 안정된 배경 정보는 압축된 상태로 유지된다.
+
+포인트 클라우드 토큰화(Point-Cloud Tokenization)는 불규칙한 3차원 기하를 처리해야 한다. 원시 점 토큰(Raw Point Token)은 세부정보를 보존하지만 계산량이 크고 점 밀도 변화에 민감하다. 복셀화(Voxelization)는 점들을 3차원 셀로 그룹화하고 희소 기하 토큰(Sparse Geometric Token)을 생성한다.
+
+지역 점 군집(Local Point Cluster)도 영역 토큰으로 변환할 수 있다. 각 영역은 중심점, 크기, 방향, 표면 특징, 색상, 밀도, 의미 정보를 포함할 수 있다. 계층적 그룹화는 점, 영역, 객체, 장면 수준 토큰을 생성한다.
+
+3차원 모델의 어휘는 물리 객체와 좌표값을 구분해야 한다. 토큰 하나는 객체 범주를 나타낼 수 있고, 연속 임베딩은 해당 객체의 위치와 크기를 나타낼 수 있다. 모든 좌표를 이산 기호로 변환하면 정밀도가 낮아질 수 있다.
+
+공간 양자화(Spatial Quantization)는 물리 환경을 여러 구간으로 나눈다. 위치, 거리, 각도, 크기를 이산 토큰으로 표현할 수 있다. 이를 통해 언어와 유사한 방식으로 자세와 궤적을 생성할 수 있지만, 양자화 오차를 통제해야 한다.
+
+거친 공간 구간은 방이나 구역 선택과 같은 내비게이션 목표에 충분할 수 있다. 조작은 훨씬 더 높은 정밀도를 요구한다. 계층형 공간 어휘(Hierarchical Spatial Vocabulary)는 먼저 거친 영역을 표현하고 이후 지역 오프셋(Local Offset)을 추가로 표현할 수 있다.
+
+상대 좌표(Relative Coordinate)는 전역 좌표보다 유용한 경우가 많다. 로봇, 카메라, 엔드이펙터, 목표를 기준으로 한 객체 위치는 환경이 달라져도 안정적으로 유지될 수 있다. 토큰은 어떤 기준 좌표계를 사용하는지를 명확히 식별해야 한다.
+
+좌표계 정보가 없는 위치 토큰은 모호하다. 따라서 어휘에는 지도 좌표계(Map Frame), 로봇 베이스(Robot Base), 카메라, 공구 중심점(Tool Center Point), 객체 지역 좌표계(Object-Local Frame)와 같은 좌표계 식별자가 포함되어야 한다.
+
+오디오 토큰화(Audio Tokenization)는 파형 구간, 스펙트럼 패치(Spectral Patch), 학습된 코덱 단위(Learned Codec Unit), 음소 토큰(Phonetic Token), 음향 이벤트 토큰을 사용할 수 있다. 원시 파형은 모든 정보를 보존하지만 매우 긴 시퀀스를 생성한다. 스펙트로그램 패치는 구조화된 시간-주파수 표현을 제공한다.
+
+음성과 환경음은 서로 다른 어휘를 필요로 할 수 있다. 음성 토큰화는 음소 및 언어적 내용을 강조하고, 환경 오디오는 이벤트 클래스, 주파수 패턴, 음원 방향, 강도, 지속 시간을 필요로 한다.
+
+통합 음향 인코더(Unified Acoustic Encoder)는 연속 임베딩을 생성하고, 상위 수준 이산 토큰은 음성 구간, 경보, 충격음, 기계음, 음원 변화를 표현할 수 있다. 이는 대형 멀티모달 모델에 전달되는 오디오 정보량을 줄인다.
+
+오디오 토큰은 시간 정보를 보존해야 한다. 소리 이벤트는 올바른 시각 프레임, 로봇 상태, 행동과 연결되어야 한다. 시간 위치 임베딩(Temporal Position Embedding)이나 명시적인 타임스탬프가 이벤트 발생 시점을 나타낼 수 있다.
+
+촉각 토큰화(Tactile Tokenization)도 유사한 어려움을 가진다. 고주파 압력 지도, 힘 신호, 촉각 이미지를 모두 대형 모델에 직접 전달할 수는 없다. 지역 인코더(Local Encoder)는 이를 접촉 상태 토큰(Contact-State Token)으로 변환할 수 있다.
+
+예시로 비접촉(No Contact), 최초 접촉(First Contact), 안정된 압력(Stable Pressure), 과도한 힘(Excessive Force), 모서리 접촉(Edge Contact), 초기 미끄러짐(Incipient Slip), 완전 미끄러짐(Full Slip), 충격(Impact), 변형(Deformation), 해제(Release)가 있다. 연속 특징은 세밀한 압력 분포와 힘 방향을 보존할 수 있다.
+
+촉각 어휘는 원시 물리값을 완전히 대체해서는 안 된다. "높은 압력(High Pressure)"이라는 토큰의 의미는 작업에 따라 달라진다. 동일한 힘이 금속 부품에는 정상일 수 있지만 깨지기 쉬운 포장에는 위험할 수 있다. 따라서 연속값, 단위, 센서 한계, 언어 문맥을 함께 유지해야 한다.
+
+고유감각 토큰화(Proprioceptive Tokenization)는 로봇 내부 상태를 표현한다. 하나의 접근법은 모든 관절 위치, 속도, 액추에이터 상태를 하나의 벡터로 구성하는 것이다. 이 방식은 효율적이지만 하나의 로봇 형태에 강하게 결합된다.
+
+더 일반적인 설계는 개별 관절, 링크, 바퀴, 센서, 엔드이펙터, 공구를 위한 토큰을 생성한다. 각 토큰은 식별자, 상태, 한계, 부모-자식 관계, 불확실성을 포함한다.
+
+그래프 기반 토큰화(Graph-Based Tokenization)는 로봇의 운동학 구조를 반영한다. 관절 및 링크 토큰은 노드가 되고, 기계적 연결은 엣지(Edge)가 된다. 이를 통해 관절 수와 몸체 구조가 서로 다른 로봇을 지원할 수 있다.
+
+형태 토큰(Morphology Token)은 링크 길이, 관절 축, 액추에이터 종류, 적재 능력(Payload Capacity), 센서 위치, 행동 능력을 설명할 수 있다. 범용 피지컬 AI 모델은 이러한 토큰을 사용하여 현재 동작 중인 체화를 이해할 수 있다.
+
+행동 토큰화(Action Tokenization)는 가장 중요한 어휘 설계 문제 가운데 하나이다. 로봇 행동은 관절 위치, 속도 명령, 토크, 엔드이펙터 자세, 궤적, 스킬, 상징적 작업 명령으로 표현될 수 있다.
+
+연속 행동은 정밀도를 보존하지만 언어형 디코더(Language-Style Decoder)가 직접 생성하기 어렵다. 이산 행동 토큰은 자기회귀 모델링(Autoregressive Modeling)을 단순화하지만 양자화 오차를 발생시킨다.
+
+균일 행동 양자화(Uniform Action Quantization)는 각 행동 차원을 고정된 구간으로 나눈다. 이 방식은 단순하지만 거의 사용되지 않는 범위에 해상도를 낭비하고, 민감한 제어 영역에서는 충분한 정밀도를 제공하지 못할 수 있다.
+
+데이터 의존적 양자화(Data-Dependent Quantization)는 자주 사용되거나 물리적으로 중요한 범위에 더 많은 토큰을 할당할 수 있다. 벡터 양자화(Vector Quantization)는 자주 등장하는 다차원 행동 패턴을 학습된 코드북(Codebook) 항목으로 표현할 수 있다.
+
+학습된 행동 어휘(Learned Action Vocabulary)는 접근(Approach), 정렬(Align), 파지(Grasp), 들어 올리기(Lift), 회전(Rotate), 삽입(Insert), 후퇴(Retract), 정지(Stop)와 같은 움직임 프리미티브(Motion Primitive)를 포함할 수 있다. 이러한 상위 수준 토큰은 방향, 거리, 힘, 속도, 목표 자세를 지정하는 연속 파라미터와 결합할 수 있다.
+
+계층형 행동 토큰화(Hierarchical Action Tokenization)는 특히 유용하다. 스킬 토큰(Skill Token)은 어떤 종류의 행동을 수행할지를 지정하고, 파라미터 토큰은 어떻게 실행할지를 지정한다. 이후 저수준 제어기가 이를 실시간 액추에이터 명령으로 변환한다.
+
+이러한 분리는 파운데이션 모델이 모든 모터 갱신을 직접 생성할 필요가 없도록 한다. 모델은 목표 접근, 공구 정렬, 저속 삽입, 힘 모니터링과 같은 짧은 시퀀스를 생성하고, 결정론적 제어기가 정밀 실행을 담당한다.
+
+행동 청킹(Action Chunking)도 시퀀스 길이를 줄인다. 각 시간 단계마다 하나의 제어 명령을 표현하는 대신 토큰이나 잠재 벡터가 짧은 미래 행동 구간을 나타낼 수 있다. 다만 환경 변화에 대응해 다시 계획할 수 있도록 청크는 충분히 짧아야 한다.
+
+어휘 설계에서는 공유 토큰과 모달리티별 토큰을 함께 고려해야 한다. 완전히 공유된 어휘는 교차 모달 전이(Cross-Modal Transfer)를 촉진할 수 있지만, 시각 영역과 행동 명령을 서로 교환 가능한 기호처럼 취급해서는 안 된다.
+
+하나의 접근은 모달리티별로 별도의 어휘를 사용하되 공유 임베딩 공간으로 투영하는 것이다. 다른 접근은 텍스트, 비전, 오디오, 상태, 행동에 대해 예약된 범위를 가진 하나의 전역 토큰 공간(Global Token Space)을 사용하는 것이다.
+
+별도 어휘는 특화된 구조를 보존하고 우연한 충돌을 줄인다. 공유 공간은 자기회귀 생성을 단순화하고 혼합 시퀀스를 직접 모델링할 수 있게 한다. 하이브리드 설계가 가장 실용적인 경우가 많다.
+
+하이브리드 어휘(Hybrid Vocabulary)는 범용 의미 토큰(Universal Semantic Token), 모달리티별 토큰, 구조 토큰(Structural Token), 연속 임베딩을 포함할 수 있다. 범용 토큰은 객체 정체성, 움직임, 접촉, 실패, 완료와 같은 개념을 나타낸다. 모달리티별 토큰은 원시 지각 또는 행동 정보를 보존한다.
+
+구조 토큰은 시퀀스 구성을 설명한다. 에피소드 시작(Episode Start), 관측(Observation), 지시(Instruction), 계획(Plan), 행동(Action), 결과(Outcome), 오류(Error), 복구(Recovery), 에피소드 종료(Episode End)를 식별할 수 있다. 이는 로봇 경험을 위한 기계 판독 가능한 문법(Machine-Readable Grammar)을 만든다.
+
+예를 들어 하나의 학습 에피소드에는 작업 토큰, 언어 지시, 시각 관측, 로봇 상태 토큰, 행동 토큰, 결과 토큰이 포함될 수 있다. 모델은 개별 모달리티뿐 아니라 이들을 연결하는 인과적·시간적 구조도 학습한다.
+
+역할 토큰(Role Token)은 측정값(Measured Value), 예측값(Predicted Value), 계획값(Planned Value), 실행값(Executed Value)을 구분할 수 있다. 계획된 궤적을 실제 로봇 움직임과 혼동해서는 안 된다. 예측된 힘을 센서 측정값처럼 취급해서도 안 된다.
+
+소스 토큰(Source Token)은 정보가 카메라, 작업자, 디지털 트윈(Digital Twin), 시뮬레이터(Simulator), 인식 모듈, 제어기, 메모리 데이터베이스 중 어디에서 왔는지를 식별할 수 있다. 데이터 출처(Provenance)가 모델 입력의 일부가 된다.
+
+이는 안전 측면에서 중요하다. 벽에서 관측한 텍스트 지시는 인증된 작업자 명령과 동일한 권한을 가져서는 안 된다. 신뢰 수준(Trust Level)과 권한 토큰(Authorization Token)을 사용하여 실행 가능한 지시와 신뢰할 수 없는 환경 콘텐츠를 구분할 수 있다.
+
+로봇 데이터는 비동기적이므로 시간 토큰 설계(Temporal Token Design)가 필수적이다. 절대 타임스탬프를 직접 인코딩할 수 있지만, 큰 수치값은 모델이 활용하기 어려울 수 있다. 상대 시간 토큰(Relative-Time Token)이 더 유용한 관계를 제공하는 경우가 많다.
+
+토큰은 이전 이벤트 이후 경과 시간, 관측 나이(Observation Age), 예상 지속 시간, 마감 시간(Deadline), 제어 주기를 나타낼 수 있다. 연속 시간 임베딩(Continuous Time Embedding)은 이산 시간 범주를 보완할 수 있다.
+
+불규칙한 이벤트 스트림을 항상 고정 시간 단계로 강제해서는 안 된다. 비동기 어휘(Asynchronous Vocabulary)는 이벤트가 발생했을 때만 토큰을 생성하고, 각 토큰에 타임스탬프 또는 시간 차이 임베딩을 포함할 수 있다.
+
+이는 안정된 구간의 중복을 줄이면서 드물고 중요한 이벤트를 보존한다. 다만 연속 센서 동역학은 이벤트 추출 이전에 지역 시퀀스 인코더로 처리해야 할 수 있다.
+
+공간 및 시간 해상도는 작업에 따라 달라져야 한다. 내비게이션 지시는 데시미터 수준의 위치 토큰과 초 단위 시간 요약을 허용할 수 있다. 삽입 및 접촉 작업은 밀리미터와 밀리초 수준의 해상도가 필요할 수 있다.
+
+동적 토큰화(Dynamic Tokenization)는 임무 단계에 따라 세분성을 변경할 수 있다. 장거리 이동 중에는 거친 토큰을 사용하고, 접촉에 가까워지면 정밀 기하, 촉각, 행동 토큰을 활성화할 수 있다.
+
+불확실성도 토큰화하거나 임베딩해야 한다. 센서 신뢰도, 보정 품질, 모호성, 분포 외 점수(Out-of-Distribution Score)는 정보를 어떻게 해석해야 하는지에 영향을 준다.
+
+낮은 신뢰도의 시각 객체 토큰은 검증된 객체와 동일한 영향력을 가져서는 안 된다. 불확실한 자세는 행동 이전에 능동적 센싱(Active Sensing)을 요구할 수 있다.
+
+불확실성은 연속 신뢰도 값, 범주형 신뢰성 토큰(Categorical Reliability Token), 확률 분포, 여러 후보 토큰으로 표현할 수 있다. 불확실한 해석을 너무 일찍 하나로 선택하기보다 여러 가설을 유지하는 편이 더 안전할 수 있다.
+
+누락된 정보에는 명시적인 어휘 요소가 필요하다. 누락된 센서 값을 0으로 표현해서는 안 된다. 0은 실제 물리적 의미를 가질 수 있기 때문이다. 누락(Missing), 지연(Delayed), 무효(Invalid), 포화(Saturated), 미보정(Not Calibrated)과 같은 토큰으로 센서 상태를 설명할 수 있다.
+
+마스크 토큰(Mask Token)은 자기지도 학습(Self-Supervised Learning)에 유용하다. 모델은 주변 멀티모달 문맥을 이용하여 마스킹된 이미지 영역, 행동 구간, 오디오 구간, 로봇 상태를 복원하도록 학습할 수 있다.
+
+어휘 크기는 모델 용량과 효율성 모두에 영향을 준다. 너무 작은 어휘는 긴 시퀀스와 모호한 토큰을 만든다. 지나치게 큰 어휘는 임베딩 메모리, 희소성, 학습 난이도를 증가시킨다.
+
+자주 사용되는 개념은 압축된 표현을 사용하고, 드문 개념은 더 작은 토큰의 조합으로 표현하는 것이 적절하다. 도메인 특화 확장은 실제 빈도와 활용도를 기준으로 통제해야 한다.
+
+학습된 벡터 양자화 어휘(Learned Vector-Quantized Vocabulary)는 반복되는 감각 또는 행동 패턴을 자동으로 발견할 수 있다. 코드북은 연속 인코더 출력을 이산 잠재 토큰으로 매핑한다. 이를 통해 트랜스포머 모델은 압축된 감각 시퀀스를 처리할 수 있다.
+
+그러나 코드북 토큰은 해석하기 어려울 수 있다. 하나의 토큰 ID가 자동으로 사람이 이해할 수 있는 개념에 대응하는 것은 아니다. 일부 항목만 사용되는 코드북 붕괴(Codebook Collapse)도 발생할 수 있다.
+
+커밋먼트 손실(Commitment Loss), 코드북 균형(Codebook Balancing), 계층형 코드북(Hierarchical Codebook), 의미 지도(Semantic Supervision)는 학습된 토큰 활용을 개선할 수 있다. 연구자는 복원 품질뿐 아니라 후속 물리 작업 성능도 평가해야 한다.
+
+토크나이저 학습 데이터는 생성되는 어휘에 큰 영향을 준다. 정상 내비게이션 데이터 중심으로 학습된 토크나이저는 충돌, 접촉, 실패, 복구를 제대로 표현하지 못할 수 있다. 드물지만 안전에 중요한 이벤트도 반드시 포함해야 한다.
+
+교차 체화 데이터도 중요하다. 하나의 로봇에서 학습된 어휘는 다른 로봇으로 전이되지 않는 몸체 특화 패턴을 인코딩할 수 있다. 형태 인식적이고 행동이 정규화된 표현이 일반화를 향상시킨다.
+
+토큰 순서는 모델 해석에 영향을 준다. 멀티모달 시퀀스는 모달리티 블록, 시간 순서 이벤트, 작업 계층, 인과 구조에 따라 구성할 수 있다. 각 방식은 서로 다른 장점을 가진다.
+
+모달리티 블록 방식은 모든 이미지, 상태, 행동을 각각 그룹화한다. 이는 단순하지만 시간 대응 관계를 약화시킬 수 있다. 시간 순서 방식은 이벤트 흐름을 보존하지만 모달리티 유형이 빠르게 전환된다.
+
+시간 순서로 혼합된 시퀀스(Interleaved Chronological Sequence)는 로봇 경험 표현에 적합한 경우가 많다. 관측 뒤에 상태, 행동, 결과, 갱신된 관측이 이어진다. 구조 토큰은 이러한 시퀀스를 이해할 수 있게 한다.
+
+인과 마스킹(Causal Masking)은 학습 목표를 반영해야 한다. 행동 예측 중에는 모델이 미래 관측을 볼 수 없어야 한다. 표현 학습에서는 양방향 어텐션(Bidirectional Attention)을 허용할 수 있다.
+
+따라서 하나의 데이터셋도 여러 토큰화 보기를 필요로 할 수 있다. 자기회귀 정책 학습(Autoregressive Policy Learning)은 인과 시퀀스를 사용하고, 마스크 모델링이나 대조 사전학습은 양방향 문맥을 사용한다.
+
+위치 인코딩(Positional Encoding)은 1차원 토큰 순서 이상을 표현해야 한다. 시각 토큰은 2차원 위치가 필요하다. 포인트 클라우드 토큰은 3차원 좌표가 필요하다. 비디오와 로봇 궤적은 시간이 필요하다.
+
+분해형 위치 인코딩(Factorized Positional Encoding)은 모달리티 위치, 공간 위치, 시간 위치, 좌표계, 계층 정보를 각각 표현할 수 있다. 모든 정보를 하나의 스칼라 시퀀스 인덱스로 강제하는 것보다 효과적일 수 있다.
+
+토큰 압축은 작업 수준 지표로 평가해야 한다. 높은 복원 품질이 성공적인 로봇 행동을 보장하지 않는다. 토크나이저가 시각 외형은 잘 복원하지만 작은 장애물이나 접촉 관련 기하 정보를 잃을 수 있다.
+
+평가에는 의미 보존(Semantic Retention), 기하 정밀도, 시간 정확도, 행동 부드러움(Action Smoothness), 드문 이벤트 보존, 폐루프 작업 성공률이 포함되어야 한다.
+
+모달리티 제거 시험(Modality-Ablation Test)은 토큰 설계가 유용한 교차 모달 관계를 보존하는지를 보여줄 수 있다. 고유감각 토큰을 제거해도 도달 가능성 예측에 변화가 없다면, 표현이 몸체 상태와 비전을 제대로 연결하지 못했을 수 있다.
+
+반사실적 시험(Counterfactual Test)은 다른 토큰 그룹은 유지한 채 하나의 토큰 그룹만 변경할 수 있다. 공구 토큰을 변경하면 도달 가능한 행동 집합이 달라져야 한다. 안전 제약 토큰을 변경하면 계획이 수정되어야 한다. 촉각 미끄러짐 토큰을 변경하면 다른 제어 반응이 발생해야 한다.
+
+학습과 배포 사이에서 어휘의 일관성을 유지해야 한다. 토크나이저 버전, 코드북, 정규화 파라미터, 좌표 규칙, 특수 토큰 정의를 기록해야 한다.
+
+토크나이저를 변경하면 모델 아키텍처가 동일하더라도 행동이 달라질 수 있다. 새로운 시각 패치 크기, 행동 구간화 방식, 텍스트 어휘는 기존 체크포인트(Checkpoint)를 무효화할 수 있다.
+
+따라서 토크나이저와 모델은 함께 버전 관리해야 한다. 수정된 어휘로 데이터셋이나 모델을 이전할 때는 변환 도구가 필요할 수 있다.
+
+효율적인 엣지 배포(Edge Deployment)는 토큰 축소의 이점을 크게 받는다. 지역 센서 인코더가 원시 스트림을 압축된 토큰으로 변환한 뒤 대형 파운데이션 모델에 전달할 수 있다. 이를 통해 메모리, 대역폭, 추론 비용을 줄일 수 있다.
+
+그러나 검증을 위해 압축이 충분히 추적 가능해야 한다. 중요한 의사결정은 원본 센서 데이터나 고해상도 지역 특징에 다시 접근해야 할 수 있다.
+
+계층형 아키텍처는 원시 제어 및 안전 데이터를 지역 결정론적 시스템에 유지하면서, 의미 요약을 파운데이션 모델에 제공할 수 있다. 모델은 모든 저수준 세부사항을 직접 제어하지 않고도 계획에 필요한 충분한 정보를 받는다.
+
+멀티모달 토큰화의 장기적인 목표는 피지컬 AI 시스템이 의미와 물리적 현실을 모두 표현할 수 있는 어휘를 만드는 것이다. 이 어휘는 객체, 공간, 몸체 상태, 접촉, 움직임, 불확실성, 목표, 행동, 결과를 설명할 수 있어야 한다.
+
+성공적인 설계는 모든 모달리티를 완전히 동일한 형식으로 강제하지 않는다. 각 모달리티가 유용하게 만드는 구조를 보존하면서 정렬, 추론, 메모리, 생성을 위한 공유 인터페이스를 만든다.
+
+텍스트 토큰은 의미적 조합을 제공한다. 시각 및 기하 토큰은 환경 증거를 제공한다. 오디오 및 촉각 토큰은 이벤트와 물리적 상호작용을 제공한다. 고유감각 토큰은 체화를 제공한다. 행동 토큰은 실행 가능한 의도를 제공한다.
+
+구조 토큰, 시간 토큰, 공간 토큰, 신뢰도 토큰, 소스 토큰, 권한 토큰은 이러한 요소들을 하나의 일관된 로봇 경험으로 연결한다.
+
+피지컬 AI에서 어휘 설계는 궁극적으로 모델이 무엇에 대해 생각할 수 있는지를 결정한다. 토큰화 과정에서 제거된 정보는 더 큰 트랜스포머를 사용하더라도 복구할 수 없다. 부적절한 행동 구간은 제어 정밀도를 제한하고, 약한 공간 토큰은 접지 성능을 제한하며, 불확실성 토큰이 없으면 과도한 확신을 유발한다.
+
+따라서 신뢰할 수 있는 멀티모달 파운데이션 모델은 토큰화를 고정된 전처리 유틸리티가 아니라 시스템 아키텍처의 일부로 취급해야 한다. 토큰 세분성, 어휘 구조, 좌표계, 시간 인코딩, 권한, 물리 정밀도를 로봇의 작업과 위험에 맞게 설계해야 한다.
+
+이러한 아키텍처 안에서 멀티모달 토큰화는 연속적인 물리 경험과 파운데이션 모델 계산 사이의 다리가 된다. 이질적인 센서 스트림, 몸체 상태, 지시, 행동을 구조화된 단위로 변환하며, 이를 통해 물리적으로 접지된 인식, 추론, 예측, 안전한 체화 행동이 나타날 수 있도록 한다.
+
+##  
+
+## 3.10 Multi Modal Model Evaluation for Robot Tasks [w/Code]
+
+![](images/image10.png){width="7.268055555555556in" height="7.268055555555556in"}
+
+Evaluating a multimodal model for robot tasks requires more than measuring whether it can classify images, answer questions, or predict actions on a recorded dataset. A Physical AI system receives information from vision, language, depth, point clouds, audio, tactile sensors, proprioception, maps, and robot-state histories, and it must transform this information into physically meaningful decisions. Evaluation must therefore examine whether the model aligns modalities correctly, combines them according to reliability and task relevance, produces feasible outputs, and supports safe closed-loop behavior.
+
+A central principle is that evaluation should separate perception quality from final task success. A robot may complete a task even when one modality is ignored, or it may fail because of a controller despite producing a correct semantic interpretation. Measuring only the final success rate makes it difficult to identify which part of the multimodal system is responsible. Evaluation should therefore include alignment, grounding, fusion, reasoning, prediction, action generation, uncertainty, latency, and physical execution.
+
+Cross-modal alignment measures whether related information from different modalities refers to the same object, event, time, or state. A language instruction describing a valve should align with the correct visual object and three-dimensional region. A force spike should align with the correct contact event and robot action. An abnormal sound should align with the machine that produced it. Alignment errors can cause physically incorrect behavior even when individual modality encoders perform well.
+
+Temporal alignment should be evaluated under realistic sensor delays and update rates. Camera frames, joint states, tactile measurements, audio, and control commands rarely arrive simultaneously. Tests should determine whether the model associates observations with the correct physical moment when timestamps contain jitter, delay, dropped packets, or clock drift. The system should reduce confidence when synchronization quality becomes poor.
+
+Spatial grounding evaluates whether language and perception are connected to correct physical locations. Metrics may include object-selection accuracy, two-dimensional or three-dimensional intersection over union, center-position error, orientation error, depth error, coordinate-frame correctness, and distance to the true target. For manipulation and inspection, millimeter-scale errors may be more important than general semantic accuracy.
+
+Grounding should also be evaluated relative to the robot embodiment. Correctly identifying an object is not sufficient if the selected target is unreachable, outside the tool workspace, or approached from an unsafe direction. Embodiment-aware evaluation should measure reachability prediction, tool compatibility, joint-limit margin, collision feasibility, and viewpoint accessibility.
+
+Fusion quality determines whether the model uses each modality meaningfully. Modality-ablation tests remove vision, language, tactile information, audio, depth, or proprioception and measure how performance changes. If removing an important modality produces almost no effect, the model may be relying on shortcuts or dominant inputs.
+
+Corruption tests provide a stronger assessment. Vision can be degraded with darkness, blur, glare, occlusion, or compression. Audio can contain noise, reverberation, and competing sources. Point clouds can become sparse or miscalibrated. Tactile sensors can drift or saturate. Proprioception can contain delay, slip, encoder noise, or missing joints. A robust model should adjust modality weights, lower confidence, request additional sensing, or enter a safe operating mode.
+
+Counterfactual evaluation examines whether the model responds correctly when one relevant factor changes. Moving an obstacle while keeping the instruction unchanged should alter the planned path. Changing the instruction from firm grasping to gentle handling should modify force and motion. Changing the robot tool should change the reachable action set. These tests reveal whether the model understands causal relationships rather than memorizing correlations.
+
+Multimodal reasoning should be tested with tasks requiring information from more than one stream. A robot may need to identify the pump producing an abnormal sound, select the connector described by language and geometry, or determine that an object is visually similar to a known component but physically softer according to tactile feedback. Such tasks prevent the model from succeeding through a single dominant modality.
+
+Evaluation should distinguish semantic reasoning from metric reasoning. A model may correctly understand that an object is behind another object but still fail to estimate the exact pose required for action. Spatial language, counting, orientation, containment, relative distance, and reference-frame interpretation should be tested separately.
+
+Action evaluation should measure physical feasibility rather than only prediction similarity. A generated trajectory may differ from a demonstration but still complete the task successfully. Conversely, a numerically similar trajectory may violate collision, force, or stability constraints. Useful metrics include trajectory completion, path efficiency, collision margin, joint-limit violation, action smoothness, peak force, energy use, and control stability.
+
+For action-token or action-chunk models, evaluation should examine temporal consistency. Consecutive outputs should not create abrupt changes in velocity, force, or control mode. Longer action chunks should be tested under environmental changes to determine whether the robot can interrupt, replan, and recover.
+
+Uncertainty calibration is essential. The model should know when visual evidence is weak, language is ambiguous, sensors disagree, or a situation is outside the training distribution. Calibration metrics can compare confidence with actual correctness, but robot evaluation must also measure whether uncertainty produces appropriate behavior.
+
+A well-calibrated robot should slow down, obtain another viewpoint, ask for clarification, call a specialized tool, or request human assistance when uncertainty is high. Confidently incorrect action is more dangerous than an uncertain prediction that triggers verification.
+
+Hallucination should be measured explicitly in vision-language and 3D-language systems. The model should not claim that an object, person, alarm, defect, or free path exists without supporting sensor evidence. Grounded outputs should reference object identifiers, image regions, point sets, poses, or sensor events that downstream systems can verify.
+
+Tool-use evaluation should determine whether the model selects appropriate external capabilities. It may call an object detector, depth estimator, inverse-kinematics solver, digital twin, motion planner, or maintenance database. Tests should examine tool selection, argument correctness, result interpretation, failure handling, and permission compliance.
+
+Safety evaluation must remain separate from average task performance. Rare but severe failures can be hidden by high mean success. Tests should include unexpected human entry, obstacle appearance, communication loss, sensor failure, excessive force, actuator error, localization loss, and contradictory instructions.
+
+The model should preserve safety constraints during long and complex tasks. A restriction given at the beginning of a mission should remain active after many observations and actions. Memory evaluation should test whether important goals, prohibitions, object identities, and failure histories are retained without allowing obsolete information to dominate current decisions.
+
+Latency and computational performance are also part of robot evaluation. The complete observation-to-action delay should include sensor exposure, communication, preprocessing, tokenization, model inference, planning, and command generation. Model-only inference time is insufficient.
+
+Average latency should be accompanied by percentile and worst-case values. Rare delays may violate control deadlines even when the mean is low. Evaluation should also measure observation age, power consumption, memory, thermal behavior, and performance under simultaneous localization, mapping, logging, and control workloads.
+
+Offline evaluation on recorded datasets is useful for repeatability and large-scale comparison, but it cannot fully represent robot behavior. Recorded data does not change in response to model actions. A model may appear accurate offline but enter unfamiliar states when its own small errors accumulate.
+
+Simulation enables controlled closed-loop testing across many environments, failures, and rare events. It can provide exact geometry, state, and outcome labels. However, simulation may omit real sensor noise, contact mechanics, network delay, calibration drift, and human unpredictability.
+
+Real-robot closed-loop evaluation is therefore necessary. The robot should be tested with unseen objects, different lighting, changing payloads, sensor degradation, moving people, environmental variation, and repeated long-duration operation. Evaluation should measure not only task completion but recovery behavior and safety intervention.
+
+Generalization should be tested across objects, environments, sites, robots, tools, and task formulations. Random frame-level splits are insufficient because neighboring frames are nearly identical. Entire missions, object instances, environments, or robot platforms should be held out.
+
+Cross-embodiment evaluation is particularly important for foundation models intended to support multiple robots. The model should distinguish shared concepts such as reachability, contact, and navigation from body-specific action spaces. Performance should be tested with new joint structures, tool geometries, payloads, or sensor configurations.
+
+Rare-event evaluation must be intentionally designed. Routine navigation or successful manipulation may dominate the dataset, while collisions, slip, failed insertion, sensor disagreement, and recovery occur infrequently. Dedicated test sets should ensure that these safety-critical cases receive sufficient attention.
+
+Interpretability can support evaluation but should not be treated as proof of correctness. Attention maps, routing patterns, retrieved memories, selected tools, and grounded object references may help engineers understand model behavior. They should be combined with behavioral tests and physical verification.
+
+Failure analysis should classify whether an error originated in sensing, synchronization, grounding, fusion, reasoning, planning, control, or safety enforcement. A single task-failure label provides little guidance for improving the system.
+
+Evaluation artifacts should be reproducible and versioned. The model checkpoint, tokenizer, sensor preprocessing, calibration, prompt, runtime, hardware, dataset version, and safety configuration should all be recorded. Small deployment changes can alter multimodal behavior.
+
+A complete benchmark should contain normal operation, difficult conditions, ambiguous instructions, corrupted sensors, unfamiliar objects, delayed observations, and safety-critical events. It should combine offline metrics, simulation, hardware-in-the-loop testing, and real-robot trials.
+
+The ultimate objective is not to prove that a multimodal model performs well on a static benchmark. It is to determine whether the full Physical AI system can perceive accurately, reason across modalities, recognize uncertainty, generate feasible behavior, recover from errors, and remain safe under real operating conditions.
+
+A reliable evaluation framework therefore connects semantic quality with physical consequence. Alignment metrics determine whether information corresponds correctly. Grounding metrics determine whether meaning is connected to real entities. Fusion tests determine whether modalities are used appropriately. Closed-loop trials determine whether the resulting behavior succeeds.
+
+Within Physical AI, multimodal model evaluation becomes the bridge between model capability and operational trust. It transforms abstract accuracy into evidence that a robot can understand its environment, its body, its instructions, and the consequences of its actions well enough to operate reliably in the physical world.
+
+로봇 작업을 위한 멀티모달 모델(Multimodal Model)을 평가하려면 기록된 데이터셋에서 이미지를 분류하거나, 질문에 답하거나, 행동을 예측할 수 있는지만 측정해서는 안 된다. 피지컬 AI(Physical AI) 시스템은 비전(Vision), 언어(Language), 깊이(Depth), 포인트 클라우드(Point Cloud), 오디오(Audio), 촉각 센서(Tactile Sensor), 고유감각(Proprioception), 지도(Map), 로봇 상태 이력(Robot-State History)으로부터 정보를 입력받아 물리적으로 의미 있는 의사결정으로 변환해야 한다. 따라서 평가는 모델이 모달리티(Modality)를 올바르게 정렬하고, 신뢰도와 작업 관련성에 따라 정보를 결합하며, 실행 가능한 출력을 생성하고, 안전한 폐루프 행동(Closed-Loop Behavior)을 지원하는지를 검증해야 한다.
+
+평가의 핵심 원칙은 인식 품질(Perception Quality)과 최종 작업 성공을 분리하는 것이다. 로봇은 하나의 모달리티를 무시하고도 작업을 완료할 수 있으며, 올바른 의미 해석을 생성했더라도 제어기 문제로 실패할 수 있다. 최종 성공률만 측정하면 멀티모달 시스템의 어느 부분이 원인인지 파악하기 어렵다. 따라서 정렬(Alignment), 접지(Grounding), 융합(Fusion), 추론(Reasoning), 예측(Prediction), 행동 생성(Action Generation), 불확실성(Uncertainty), 지연 시간(Latency), 물리적 실행을 각각 평가해야 한다.
+
+교차 모달 정렬(Cross-Modal Alignment)은 서로 다른 모달리티의 관련 정보가 동일한 객체, 사건, 시간, 상태를 가리키는지를 측정한다. 밸브를 설명하는 언어 지시는 올바른 시각 객체 및 3차원 영역과 정렬되어야 한다. 힘의 급증은 올바른 접촉 사건 및 로봇 행동과 연결되어야 한다. 비정상적인 소리는 해당 소리를 발생시킨 기계와 연결되어야 한다. 개별 모달리티 인코더의 성능이 높더라도 정렬이 잘못되면 물리적으로 부정확한 행동이 발생할 수 있다.
+
+시간 정렬(Temporal Alignment)은 실제적인 센서 지연과 갱신 주기에서 평가해야 한다. 카메라 프레임, 관절 상태, 촉각 측정값, 오디오, 제어 명령은 동시에 도착하지 않는다. 타임스탬프에 지터(Jitter), 지연, 패킷 손실, 시계 드리프트(Clock Drift)가 포함될 때도 모델이 관측을 올바른 물리적 시점과 연결하는지를 시험해야 한다. 동기화 품질이 낮아지면 시스템은 신뢰도를 낮춰야 한다.
+
+공간 접지(Spatial Grounding)는 언어와 인식 결과가 올바른 물리적 위치에 연결되는지를 평가한다. 지표에는 객체 선택 정확도, 2차원 또는 3차원 교집합 대비 합집합(Intersection over Union), 중심 위치 오차, 방향 오차, 깊이 오차, 좌표계 정확성, 실제 목표까지의 거리가 포함될 수 있다. 조작과 검사에서는 일반적인 의미 정확도보다 밀리미터 수준의 오차가 더 중요할 수 있다.
+
+접지는 로봇 체화(Embodiment)를 기준으로도 평가해야 한다. 객체를 올바르게 식별하더라도 목표가 도달 불가능하거나, 공구 작업 범위를 벗어나거나, 위험한 방향에서 접근한다면 충분하지 않다. 체화 인식 평가(Embodiment-Aware Evaluation)는 도달 가능성 예측, 공구 호환성, 관절 한계 여유(Joint-Limit Margin), 충돌 가능성, 관측 시점 접근성을 측정해야 한다.
+
+융합 품질(Fusion Quality)은 모델이 각 모달리티를 의미 있게 사용하는지를 판단한다. 모달리티 제거 시험(Modality-Ablation Test)은 비전, 언어, 촉각 정보, 오디오, 깊이, 고유감각을 제거하고 성능 변화를 측정한다. 중요한 모달리티를 제거해도 영향이 거의 없다면 모델이 지름길(Shortcut)이나 하나의 지배적인 입력에 의존하고 있을 수 있다.
+
+손상 시험(Corruption Test)은 더 강력한 평가를 제공한다. 비전에는 어둠, 블러(Blur), 눈부심, 가림(Occlusion), 압축을 적용할 수 있다. 오디오에는 소음, 잔향(Reverberation), 경쟁 음원을 추가할 수 있다. 포인트 클라우드는 희소해지거나 잘못 보정될 수 있다. 촉각 센서는 드리프트하거나 포화될 수 있다. 고유감각에는 지연, 미끄러짐, 인코더 노이즈, 관절 정보 누락이 발생할 수 있다. 강건한 모델은 모달리티 가중치를 조절하고, 신뢰도를 낮추며, 추가 센싱을 요청하거나, 안전 운용 모드로 전환해야 한다.
+
+반사실적 평가(Counterfactual Evaluation)는 하나의 관련 요소가 변할 때 모델이 적절하게 반응하는지를 검증한다. 명령은 그대로 유지한 채 장애물을 이동하면 계획 경로가 달라져야 한다. 단단한 파지에서 부드러운 취급으로 명령을 변경하면 힘과 움직임이 달라져야 한다. 로봇 공구를 변경하면 도달 가능한 행동 집합도 변해야 한다. 이러한 시험은 모델이 단순한 상관관계를 암기하는 것이 아니라 인과 관계를 이해하는지를 보여준다.
+
+멀티모달 추론은 두 개 이상의 정보 스트림이 필요한 작업으로 시험해야 한다. 로봇은 비정상적인 소리를 내는 펌프를 식별하거나, 언어와 기하 조건에 맞는 커넥터를 선택하거나, 시각적으로는 알려진 부품과 비슷하지만 촉각 피드백에 따르면 더 부드러운 객체임을 판단해야 할 수 있다. 이러한 작업은 하나의 지배적 모달리티만으로 성공하는 것을 방지한다.
+
+평가에서는 의미 추론(Semantic Reasoning)과 거리 기반 추론(Metric Reasoning)을 구분해야 한다. 모델은 객체가 다른 객체의 뒤에 있다는 사실을 이해하면서도 행동에 필요한 정확한 자세를 추정하지 못할 수 있다. 공간 언어, 개수, 방향, 포함 관계, 상대 거리, 기준 좌표계 해석을 별도로 시험해야 한다.
+
+행동 평가는 단순한 예측 유사도가 아니라 물리적 실행 가능성을 측정해야 한다. 생성된 궤적이 시연과 다르더라도 작업을 성공적으로 완료할 수 있다. 반대로 수치적으로 비슷한 궤적이라도 충돌, 힘, 안정성 제약을 위반할 수 있다. 유용한 지표에는 궤적 완료율, 경로 효율, 충돌 여유(Collision Margin), 관절 한계 위반, 행동 부드러움(Action Smoothness), 최대 힘, 에너지 사용량, 제어 안정성이 포함된다.
+
+행동 토큰(Action Token)이나 행동 청크(Action Chunk)를 사용하는 모델은 시간적 일관성도 평가해야 한다. 연속된 출력이 속도, 힘, 제어 모드의 급격한 변화를 만들어서는 안 된다. 긴 행동 청크는 환경이 변할 때 로봇이 실행을 중단하고, 재계획하고, 복구할 수 있는지 시험해야 한다.
+
+불확실성 보정(Uncertainty Calibration)은 필수적이다. 모델은 시각 증거가 약하거나, 언어가 모호하거나, 센서가 서로 불일치하거나, 상황이 학습 분포 밖에 있을 때 이를 인식해야 한다. 보정 지표는 신뢰도와 실제 정답률을 비교할 수 있지만, 로봇 평가에서는 불확실성이 적절한 행동으로 연결되는지도 측정해야 한다.
+
+잘 보정된 로봇은 불확실성이 높을 때 감속하고, 다른 시점을 확보하며, 추가 설명을 요청하고, 전문 도구를 호출하거나, 사람의 지원을 요청해야 한다. 잘못된 행동을 높은 확신으로 수행하는 것은 검증을 유발하는 불확실한 예측보다 더 위험하다.
+
+비전-언어 및 3차원-언어 시스템에서는 환각(Hallucination)을 명시적으로 측정해야 한다. 모델은 센서 증거가 없는데도 객체, 사람, 경보, 결함, 비어 있는 경로가 존재한다고 주장해서는 안 된다. 접지된 출력은 후속 시스템이 검증할 수 있는 객체 식별자, 이미지 영역, 점 집합, 자세, 센서 이벤트를 참조해야 한다.
+
+도구 사용 평가(Tool-Use Evaluation)는 모델이 적절한 외부 기능을 선택하는지를 검증해야 한다. 모델은 객체 검출기(Object Detector), 깊이 추정기(Depth Estimator), 역기구학 해석기(Inverse-Kinematics Solver), 디지털 트윈(Digital Twin), 모션 플래너(Motion Planner), 유지보수 데이터베이스를 호출할 수 있다. 시험은 도구 선택, 인수 정확성, 결과 해석, 실패 처리, 권한 준수를 포함해야 한다.
+
+안전 평가는 평균 작업 성능과 분리해야 한다. 드물지만 심각한 실패는 높은 평균 성공률에 가려질 수 있다. 시험에는 예상하지 못한 사람의 진입, 장애물 출현, 통신 손실, 센서 고장, 과도한 힘, 액추에이터 오류, 위치 추정 손실, 상충하는 명령이 포함되어야 한다.
+
+모델은 길고 복잡한 작업에서도 안전 제약을 유지해야 한다. 임무 시작 시 전달된 제한사항은 많은 관측과 행동 이후에도 활성 상태로 남아야 한다. 메모리 평가는 중요한 목표, 금지사항, 객체 정체성, 실패 이력을 유지하면서도 오래된 정보가 현재 판단을 지배하지 않는지를 시험해야 한다.
+
+지연 시간과 계산 성능도 로봇 평가의 일부이다. 전체 관측-행동 지연 시간(Observation-to-Action Latency)은 센서 노출, 통신, 전처리, 토큰화(Tokenization), 모델 추론, 계획, 명령 생성을 모두 포함해야 한다. 모델 추론 시간만으로는 충분하지 않다.
+
+평균 지연 시간과 함께 백분위 및 최악 지연 시간을 보고해야 한다. 평균값이 낮더라도 드물게 발생하는 긴 지연이 제어 마감 시간을 위반할 수 있다. 관측 나이(Observation Age), 소비전력, 메모리, 열 거동, 위치 추정·지도 작성·로깅·제어가 동시에 실행될 때의 성능도 측정해야 한다.
+
+기록된 데이터셋을 사용하는 오프라인 평가(Offline Evaluation)는 반복성과 대규모 비교에 유용하지만 실제 로봇 행동을 완전히 표현할 수 없다. 기록 데이터는 모델 행동에 따라 변하지 않는다. 모델은 오프라인에서 정확해 보여도 자신의 작은 오류가 누적되면서 익숙하지 않은 상태에 진입할 수 있다.
+
+시뮬레이션은 다양한 환경, 실패, 드문 사건에 대한 통제된 폐루프 시험을 가능하게 한다. 정확한 기하, 상태, 결과 라벨을 제공할 수 있다. 그러나 실제 센서 노이즈, 접촉 역학, 네트워크 지연, 보정 드리프트, 인간의 예측 불가능성을 완전히 표현하지 못할 수 있다.
+
+따라서 실제 로봇 폐루프 평가(Real-Robot Closed-Loop Evaluation)가 필요하다. 로봇은 학습하지 않은 객체, 다른 조명, 변화하는 적재물, 센서 성능 저하, 움직이는 사람, 환경 변화, 반복적인 장시간 운용에서 시험되어야 한다. 평가는 작업 완료뿐 아니라 복구 행동과 안전 개입도 측정해야 한다.
+
+일반화(Generalization)는 객체, 환경, 사이트, 로봇, 공구, 작업 표현에 걸쳐 시험해야 한다. 인접 프레임은 거의 동일하기 때문에 무작위 프레임 분할은 충분하지 않다. 전체 임무, 객체 인스턴스, 환경, 로봇 플랫폼을 시험 데이터로 분리해야 한다.
+
+교차 체화 평가(Cross-Embodiment Evaluation)는 여러 로봇을 지원하는 파운데이션 모델에서 특히 중요하다. 모델은 도달 가능성, 접촉, 내비게이션과 같은 공유 개념과 몸체별 행동 공간을 구분해야 한다. 새로운 관절 구조, 공구 형상, 적재물, 센서 구성에서 성능을 시험해야 한다.
+
+드문 이벤트 평가(Rare-Event Evaluation)는 의도적으로 설계해야 한다. 일상적인 내비게이션이나 성공적인 조작이 데이터셋 대부분을 차지할 수 있지만, 충돌, 미끄러짐, 삽입 실패, 센서 불일치, 복구는 드물게 발생한다. 전용 시험 세트를 통해 이러한 안전 중요 사례를 충분히 평가해야 한다.
+
+해석 가능성(Interpretability)은 평가를 지원할 수 있지만 정확성의 증거로 간주해서는 안 된다. 어텐션 맵(Attention Map), 라우팅 패턴(Routing Pattern), 검색된 메모리, 선택된 도구, 접지된 객체 참조는 엔지니어가 모델 행동을 이해하는 데 도움을 줄 수 있다. 그러나 행동 시험과 물리적 검증이 함께 수행되어야 한다.
+
+실패 분석(Failure Analysis)은 오류가 센싱, 동기화, 접지, 융합, 추론, 계획, 제어, 안전 강제 중 어디에서 시작되었는지를 분류해야 한다. 하나의 작업 실패 라벨만으로는 시스템 개선에 충분한 정보를 제공하지 못한다.
+
+평가 아티팩트(Evaluation Artifact)는 재현 가능하고 버전 관리되어야 한다. 모델 체크포인트(Checkpoint), 토크나이저(Tokenizer), 센서 전처리, 보정 정보, 프롬프트(Prompt), 런타임, 하드웨어, 데이터셋 버전, 안전 구성을 모두 기록해야 한다. 작은 배포 변경도 멀티모달 행동을 바꿀 수 있다.
+
+완전한 벤치마크는 정상 운용, 어려운 조건, 모호한 명령, 손상된 센서, 익숙하지 않은 객체, 지연된 관측, 안전 중요 사건을 포함해야 한다. 오프라인 지표, 시뮬레이션, 하드웨어-인-더-루프 시험(Hardware-in-the-Loop Testing), 실제 로봇 시험을 결합해야 한다.
+
+궁극적인 목표는 멀티모달 모델이 정적인 벤치마크에서 좋은 성능을 보인다는 것을 증명하는 것이 아니다. 전체 피지컬 AI 시스템이 실제 운용 조건에서 정확하게 인식하고, 여러 모달리티를 함께 추론하며, 불확실성을 인식하고, 실행 가능한 행동을 생성하고, 오류에서 복구하며, 안전성을 유지할 수 있는지를 판단하는 것이다.
+
+따라서 신뢰할 수 있는 평가 프레임워크는 의미적 품질을 물리적 결과와 연결해야 한다. 정렬 지표는 정보가 올바르게 대응하는지를 판단한다. 접지 지표는 의미가 실제 객체와 연결되는지를 판단한다. 융합 시험은 모달리티가 적절히 사용되는지를 판단한다. 폐루프 시험은 그 결과로 생성된 행동이 실제로 성공하는지를 판단한다.
+
+피지컬 AI에서 멀티모달 모델 평가는 모델 능력과 운용 신뢰(Operation Trust)를 연결하는 다리가 된다. 추상적인 정확도를 로봇이 환경, 자신의 몸체, 지시, 행동의 결과를 물리 세계에서 신뢰성 있게 동작할 수 있을 정도로 이해한다는 증거로 변환한다.
